@@ -2,6 +2,7 @@ package io.github.minilauncher.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.annotation.VisibleForTesting
 import io.github.minilauncher.data.model.AppVisibility
 import io.github.minilauncher.data.model.Folder
 import io.github.minilauncher.data.model.Schedule
@@ -440,5 +441,11 @@ class Prefs(context: Context) {
             instance ?: synchronized(this) {
                 instance ?: Prefs(context).also { instance = it }
             }
+
+        /** Lets each Robolectric test start from its own, empty settings store. */
+        @VisibleForTesting
+        fun resetForTests() {
+            instance = null
+        }
     }
 }

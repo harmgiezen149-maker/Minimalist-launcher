@@ -1,5 +1,8 @@
+import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
+
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.roborazzi)
 }
 
 // CI numbers every build, so each APK installs as an update over the last one.
@@ -18,6 +21,12 @@ android {
         versionCode = buildNumber
         versionName = "1.$buildNumber"
         buildConfigField("String", "COMMIT", "\"$commit\"")
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    testOptions {
+        // Robolectric tests inflate the real layouts and read the real strings.
+        unitTests.isIncludeAndroidResources = true
     }
 
     buildFeatures {
@@ -53,6 +62,15 @@ android {
     }
 }
 
+// Robolectric loads the app's classes through its own class loader; without
+// this JaCoCo would not count the code those tests cover.
+tasks.withType<Test>().configureEach {
+    extensions.findByType(JacocoTaskExtension::class.java)?.apply {
+        isIncludeNoLocationClasses = true
+        excludes = listOf("jdk.internal.*")
+    }
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -61,4 +79,15 @@ dependencies {
     testImplementation(libs.junit)
     // Real org.json for unit tests; the android.jar stub throws "not mocked".
     testImplementation(libs.json)
+    // Screens and settings on a simulated Android, plus screenshot comparison.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.roborazzi)
+    // Smoke tests on an emulator, with Espresso's accessibility checks.
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.espresso.core)
+    androidTestImplementation(libs.espresso.accessibility)
 }
