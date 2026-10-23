@@ -262,7 +262,7 @@ class HomeActivity : BaseActivity() {
         view.setOnClickListener {
             when (val target = if (isLeft) prefs.shortcutLeft else prefs.shortcutRight) {
                 Prefs.SHORTCUT_DIALER -> runCatching { startActivity(Intent(Intent.ACTION_DIAL)) }
-                else -> AppLauncher.launch(this, target)
+                else -> if (repo.isLaunchable(target)) AppLauncher.launch(this, target) else showShortcutPicker(isLeft)
             }
         }
         view.setOnLongClickListener {
@@ -286,12 +286,12 @@ class HomeActivity : BaseActivity() {
             .show()
     }
 
-    private fun shortcutLabel(target: String): String =
-        if (target == Prefs.SHORTCUT_DIALER) {
-            getString(R.string.shortcut_dialer_label)
-        } else {
-            repo.labelFor(target)
-        }
+    /** A shortcut to an app that is not installed (Gmail, by default) invites a choice instead. */
+    private fun shortcutLabel(target: String): String = when {
+        target == Prefs.SHORTCUT_DIALER -> getString(R.string.shortcut_dialer_label)
+        repo.isLaunchable(target) -> repo.labelFor(target)
+        else -> getString(R.string.shortcut_choose)
+    }
 
     // ---- day / evening mode ----
 

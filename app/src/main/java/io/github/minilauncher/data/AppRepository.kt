@@ -76,6 +76,9 @@ class AppRepository(private val context: Context) {
         return prefs.favorites.mapNotNull { byPackage[it] }
     }
 
+    /** Whether [pkg] is installed and has a launcher entry. */
+    fun isLaunchable(pkg: String): Boolean = installedApps().any { it.packageName == pkg }
+
     fun labelFor(pkg: String): String {
         prefs.renames[pkg]?.let { return it }
         cache?.firstOrNull { it.packageName == pkg }?.let { return it.label }

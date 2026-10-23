@@ -2,9 +2,11 @@ package io.github.minilauncher.robolectric
 
 import android.app.Application
 import android.view.View
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.github.minilauncher.App
 import io.github.minilauncher.R
 import io.github.minilauncher.data.AppRepository
 import io.github.minilauncher.data.Prefs
@@ -69,5 +71,33 @@ class HomeActivityTest {
         val home = screens.start(HomeActivity::class.java)
         home.onBackPressedDispatcher.onBackPressed()
         assertEquals(false, home.isFinishing)
+    }
+
+    @Test
+    fun `green text is green on the black theme too`() {
+        prefs.theme = Prefs.THEME_OLED
+        prefs.crtGreen = true
+        App.applyNightMode(Prefs.THEME_OLED)
+        val home = screens.start(HomeActivity::class.java)
+        assertEquals(
+            home.getColor(R.color.crt_green),
+            home.findViewById<TextView>(R.id.allAppsButton).currentTextColor,
+        )
+    }
+
+    @Test
+    fun `a shortcut to an installed app shows its name`() {
+        prefs.shortcutRight = "com.mail"
+        val home = screens.start(HomeActivity::class.java)
+        val shortcut = home.findViewById<TextView>(R.id.shortcutRight)
+        waitUntil { shortcut.text.toString() == "Mail" }
+    }
+
+    @Test
+    fun `a shortcut to an app that is not installed offers a choice`() {
+        prefs.shortcutRight = "com.not.installed"
+        val home = screens.start(HomeActivity::class.java)
+        val shortcut = home.findViewById<TextView>(R.id.shortcutRight)
+        waitUntil { shortcut.text.toString() == home.getString(R.string.shortcut_choose) }
     }
 }

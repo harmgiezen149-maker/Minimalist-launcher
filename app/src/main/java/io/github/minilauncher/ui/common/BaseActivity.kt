@@ -46,12 +46,15 @@ abstract class BaseActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
         val appearance = currentAppearance()
         builtWith = appearance
+        // After super.onCreate, before the subclass inflates its layout: when
+        // AppCompat switches day/night there, it re-applies the base theme,
+        // which would drop an overlay applied earlier.
         if (appearance.crtGreen) {
             theme.applyStyle(R.style.ThemeOverlay_MiniLauncher_Crt, true)
         }
-        super.onCreate(savedInstanceState)
         enableEdgeToEdge()
     }
 
