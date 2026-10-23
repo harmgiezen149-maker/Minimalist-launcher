@@ -119,7 +119,14 @@ jobs:
           target: google_apis
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: ./gradlew --no-daemon connectedDebugAndroidTest
+          # A freshly booted emulator can still show the lock screen or a
+          # "System UI isn't responding" dialog, which takes the window focus
+          # Espresso waits for. Unlock, hide error dialogs, close what is open.
+          script: |
+            adb shell input keyevent 82 || true
+            adb shell settings put global hide_error_dialogs 1 || true
+            adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS || true
+            ./gradlew --no-daemon connectedDebugAndroidTest
 
       - name: Smoke test failures
         if: failure()
