@@ -195,7 +195,14 @@ class HomeActivity : BaseActivity() {
             LocationManager.GPS_PROVIDER,
             LocationManager.PASSIVE_PROVIDER,
         ).mapNotNull { provider ->
-            runCatching { lm.getLastKnownLocation(provider) }.getOrNull()
+            // The permission can be revoked between the check above and here.
+            try {
+                lm.getLastKnownLocation(provider)
+            } catch (e: SecurityException) {
+                null
+            } catch (e: IllegalArgumentException) {
+                null // provider not present on this device
+            }
         }.maxByOrNull { it.time }
     }
 

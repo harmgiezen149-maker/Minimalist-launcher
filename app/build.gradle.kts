@@ -52,10 +52,9 @@ android {
 
     lint {
         // Lint errors fail the build. The full list, warnings included, is
-        // printed in the build log and kept as an HTML report.
+        // printed in the CI log and kept as an HTML report.
         abortOnError = true
         textReport = true
-        textOutput = file("stdout")
     }
 }
 

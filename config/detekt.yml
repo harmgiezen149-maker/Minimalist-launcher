@@ -33,6 +33,7 @@ exceptions:
       - MalformedURLException
       - NumberFormatException
       - ParseException
-      # Starting another app: failure is reported to the user, not rethrown.
+      # Starting another app or reading a location: failure is handled, not rethrown.
       - ActivityNotFoundException
       - SecurityException
+      - IllegalArgumentException

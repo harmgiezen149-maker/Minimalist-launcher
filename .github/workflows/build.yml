@@ -37,6 +37,10 @@ jobs:
       - name: Lint, test with coverage and build the release APK
         run: ./gradlew --no-daemon lint createDebugUnitTestCoverageReport assembleRelease
 
+      - name: Lint findings
+        if: always()
+        run: cat app/build/reports/lint-results-*.txt 2>/dev/null || echo "No lint report."
+
       - name: Coverage summary
         if: always()
         run: |
