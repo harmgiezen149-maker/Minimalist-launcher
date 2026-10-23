@@ -99,5 +99,6 @@ class HomeActivityTest {
         val home = screens.start(HomeActivity::class.java)
         val shortcut = home.findViewById<TextView>(R.id.shortcutRight)
         waitUntil { shortcut.text.toString() == home.getString(R.string.shortcut_choose) }
+        assertEquals(home.getString(R.string.shortcut_choose_description), shortcut.contentDescription)
     }
 }

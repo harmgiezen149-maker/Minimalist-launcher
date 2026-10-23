@@ -293,6 +293,14 @@ class HomeActivity : BaseActivity() {
         else -> getString(R.string.shortcut_choose)
     }
 
+    private fun showShortcut(viewId: Int, label: String) {
+        val view = findViewById<TextView>(viewId)
+        view.text = label
+        // TalkBack would read the bare "+" as "plus".
+        view.contentDescription =
+            if (label == getString(R.string.shortcut_choose)) getString(R.string.shortcut_choose_description) else null
+    }
+
     // ---- day / evening mode ----
 
     /** Rebuilds the app list when the mode flipped; otherwise just refreshes the label. */
@@ -374,8 +382,8 @@ class HomeActivity : BaseActivity() {
                     if (favs.isEmpty()) View.VISIBLE else View.GONE
                 findViewById<TextView>(R.id.blockerWarning).visibility =
                     if (warnBlocker) View.VISIBLE else View.GONE
-                findViewById<TextView>(R.id.shortcutLeft).text = leftLabel
-                findViewById<TextView>(R.id.shortcutRight).text = rightLabel
+                showShortcut(R.id.shortcutLeft, leftLabel)
+                showShortcut(R.id.shortcutRight, rightLabel)
             }
         }
     }

@@ -116,7 +116,9 @@
     <string name="shortcut_dialer">Phone (dialer)</string>
     <string name="shortcut_dialer_label">Phone</string>
     <string name="shortcut_pick_title">Choose shortcut app</string>
-    <string name="shortcut_choose">Choose app</string>
+    <!-- Fits the narrow corner slot; TalkBack reads the description. -->
+    <string name="shortcut_choose">+</string>
+    <string name="shortcut_choose_description">Choose shortcut app</string>
 
     <!-- Focus session -->
     <string name="settings_focus_session">Focus session</string>
