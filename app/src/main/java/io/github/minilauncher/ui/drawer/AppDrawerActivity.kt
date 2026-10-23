@@ -10,6 +10,7 @@ import android.widget.EditText
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.core.widget.doAfterTextChanged
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import io.github.minilauncher.R
 import io.github.minilauncher.data.AppRepository
@@ -126,7 +127,18 @@ class AppDrawerActivity : BaseActivity() {
         val room = if (query.isBlank()) (list.height * TOP_BOTTOM_ROOM).toInt() else 0
         if (list.paddingTop != room || list.paddingBottom != room) {
             list.setPadding(list.paddingLeft, room, list.paddingRight, room)
+            showFromTop()
         }
+    }
+
+    /**
+     * The first row at the top edge, the room above it scrolled away. Without
+     * this the start depended on timing: rows laid out before the room existed
+     * stayed at the top, rows laid out after it started a third of the way down.
+     */
+    private fun showFromTop() {
+        val list = findViewById<RecyclerView>(R.id.appList)
+        (list.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(0, -list.paddingTop)
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
@@ -207,6 +219,7 @@ class AppDrawerActivity : BaseActivity() {
             }
         }
         adapter.submit(rows.map { it.label })
+        showFromTop()
         leaveFolder.isEnabled = currentFolderId != null && q.isEmpty()
     }
 

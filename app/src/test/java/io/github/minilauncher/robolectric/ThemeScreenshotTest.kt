@@ -2,6 +2,7 @@ package io.github.minilauncher.robolectric
 
 import android.app.Activity
 import android.app.Application
+import android.os.Looper
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ApplicationProvider
@@ -16,9 +17,11 @@ import io.github.minilauncher.data.model.BlockedInfo
 import io.github.minilauncher.ui.blocked.BlockedActivity
 import io.github.minilauncher.ui.drawer.AppDrawerActivity
 import io.github.minilauncher.ui.home.HomeActivity
+import java.time.Duration
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -88,7 +91,14 @@ class ThemeScreenshotTest {
         activity.findViewById<RecyclerView>(id).adapter?.itemCount ?: 0
 
     private fun capture(activity: Activity, name: String) {
-        waitUntil { true }
+        // A layout pass can post work that changes the layout again (the
+        // drawer's room around its rows); let a few frames run first.
+        repeat(SETTLE_FRAMES) { shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(FRAME_MILLIS)) }
         activity.window.decorView.captureRoboImage("src/test/screenshots/$name.png")
+    }
+
+    private companion object {
+        const val SETTLE_FRAMES = 3
+        const val FRAME_MILLIS = 50L
     }
 }
