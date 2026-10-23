@@ -3,11 +3,16 @@ package io.github.minilauncher.blocking
 import io.github.minilauncher.data.model.BlockReason
 import io.github.minilauncher.data.model.Decision
 import io.github.minilauncher.data.model.Schedule
+import io.github.minilauncher.util.Time
 
 /**
  * Pure decision logic: given the current configuration and time, should a
- * package be blocked? Precedence: temporary allowance > focus mode /
- * schedule > daily limit.
+ * package be blocked?
+ *
+ * The daily limit is hard: no temporary allowance (a mindful-pause duration
+ * or "5 more minutes") lets an app past it. A live allowance does lift focus
+ * mode, schedules and the mindful pause. When several rules block, focus mode
+ * and schedules are reported first, then the limit, then the mindful pause.
  */
 object BlockDecisionEngine {
 
@@ -38,39 +43,38 @@ object BlockDecisionEngine {
         minuteOfDay: Int,
         usageTodayMillis: (String) -> Long,
     ): Decision {
-        val allowedUntil = config.tempAllowUntil[packageName] ?: 0L
-        if (allowedUntil > nowMillis) return Decision.Allow
-
-        if (packageName in config.blockedApps) {
-            val focusActive = config.focusModeEnabled || nowMillis < config.focusSessionUntil
-            if (focusActive) {
-                return Decision.Block(BlockReason.FOCUS_MODE, "")
-            }
-            val active = ScheduleEvaluator.activeSchedule(config.schedules, dayOfWeek, minuteOfDay)
-            if (active != null) {
-                return Decision.Block(BlockReason.SCHEDULE, formatWindowEnd(active))
-            }
-        }
-
-        // Limit is checked before mindful: the mindful pause hands out temporary
-        // allowances, which must not let the user sidestep a hard daily limit.
-        val limitMinutes = config.limits[packageName]
-        if (limitMinutes != null && limitMinutes > 0) {
-            val usedMillis = usageTodayMillis(packageName)
-            if (usedMillis >= limitMinutes * 60_000L) {
-                return Decision.Block(BlockReason.LIMIT, limitMinutes.toString())
-            }
-        }
-
-        if (packageName in config.mindfulApps) {
-            return Decision.Block(BlockReason.MINDFUL, "")
-        }
-        return Decision.Allow
+        val allowed = (config.tempAllowUntil[packageName] ?: 0L) > nowMillis
+        val mindful = Decision.Block(BlockReason.MINDFUL, "").takeIf { !allowed && packageName in config.mindfulApps }
+        return (if (allowed) null else blockListDecision(packageName, config, nowMillis, dayOfWeek, minuteOfDay))
+            ?: limitDecision(packageName, config, usageTodayMillis)
+            ?: mindful
+            ?: Decision.Allow
     }
 
-    private fun formatWindowEnd(schedule: Schedule): String {
-        val h = schedule.endMinute / 60
-        val m = schedule.endMinute % 60
-        return "%02d:%02d".format(h, m)
+    /** Focus mode (manual or a timed session) or an active schedule, for apps on the block list. */
+    private fun blockListDecision(
+        packageName: String,
+        config: Config,
+        nowMillis: Long,
+        dayOfWeek: Int,
+        minuteOfDay: Int,
+    ): Decision.Block? {
+        if (packageName !in config.blockedApps) return null
+        if (config.focusModeEnabled || nowMillis < config.focusSessionUntil) {
+            return Decision.Block(BlockReason.FOCUS_MODE, "")
+        }
+        val active = ScheduleEvaluator.activeSchedule(config.schedules, dayOfWeek, minuteOfDay) ?: return null
+        return Decision.Block(BlockReason.SCHEDULE, Time.formatMinuteOfDay(active.endMinute))
+    }
+
+    /** The daily limit; usage is only computed when the app has one. */
+    private fun limitDecision(
+        packageName: String,
+        config: Config,
+        usageTodayMillis: (String) -> Long,
+    ): Decision.Block? {
+        val limitMinutes = config.limits[packageName]?.takeIf { it > 0 } ?: return null
+        val reached = usageTodayMillis(packageName) >= limitMinutes * Time.MINUTE_MILLIS
+        return if (reached) Decision.Block(BlockReason.LIMIT, limitMinutes.toString()) else null
     }
 }

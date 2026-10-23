@@ -4,6 +4,7 @@ import android.app.Activity
 import androidx.appcompat.app.AlertDialog
 import io.github.minilauncher.R
 import io.github.minilauncher.data.Prefs
+import io.github.minilauncher.util.Time
 
 /**
  * Turns evening mode on temporarily — deliberately not a one-tap action: an
@@ -44,7 +45,7 @@ object EveningOverrideDialog {
             .setItems(labels) { _, which ->
                 // Stored as an end timestamp so it also expires while closed.
                 Prefs.get(activity).eveningOverrideUntil =
-                    System.currentTimeMillis() + DURATIONS[which] * 60_000L
+                    System.currentTimeMillis() + DURATIONS[which] * Time.MINUTE_MILLIS
                 onChanged()
             }
             .setNegativeButton(android.R.string.cancel, null)

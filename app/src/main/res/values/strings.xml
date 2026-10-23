@@ -31,6 +31,7 @@
     <string name="limit_message">Minutes of use allowed per day. The app is blocked for the rest of the day once the limit is reached.</string>
     <string name="limit_hint">Minutes per day</string>
     <string name="limit_remove">Remove limit</string>
+    <string name="limit_invalid">Not saved: enter a whole number of minutes from 1 to 1440.</string>
 
     <!-- Home -->
     <string name="home_all_apps">Apps</string>
@@ -162,6 +163,7 @@
     <string name="settings_stats">Screen time today</string>
     <string name="settings_permissions">Permissions</string>
     <string name="settings_set_default_home">Set as default launcher</string>
+    <string name="app_not_found">This app can\'t be opened. It may have been removed.</string>
     <string name="settings_section_backup">Backup</string>
     <string name="settings_export">Export settings to a file</string>
     <string name="settings_import">Import settings from a file</string>
@@ -193,6 +195,11 @@
     <string name="schedule_edit">Edit schedule: pick days</string>
     <string name="schedule_save">Next: times</string>
     <string name="schedule_delete">Delete</string>
+    <string name="schedule_edit_times">Days and times</string>
+    <string name="schedule_rename">Rename</string>
+    <string name="schedule_turn_off">Turn off</string>
+    <string name="schedule_turn_on">Turn on</string>
+    <string name="schedule_no_days">Pick at least one day: a schedule without days never blocks anything.</string>
     <string name="schedule_default_name">Focus</string>
     <string name="schedule_start_time">Start time</string>
     <string name="schedule_end_time">End time</string>

@@ -7,12 +7,12 @@ import io.github.minilauncher.data.model.Folder
 import io.github.minilauncher.data.model.Schedule
 import io.github.minilauncher.mode.DayEveningEvaluator
 import io.github.minilauncher.mode.ModeState
-import org.json.JSONArray
-import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.time.LocalTime
 import java.util.Date
 import java.util.Locale
+import org.json.JSONArray
+import org.json.JSONObject
 
 /**
  * All persistent state, stored in a single SharedPreferences file. Structured
@@ -248,7 +248,7 @@ class Prefs(context: Context) {
 
     /** 0 = off */
     var nudgeIntervalMinutes: Int
-        get() = sp.getInt(KEY_NUDGE_INTERVAL, 15)
+        get() = sp.getInt(KEY_NUDGE_INTERVAL, DEFAULT_NUDGE_INTERVAL)
         set(value) = sp.edit().putInt(KEY_NUDGE_INTERVAL, value).apply()
 
     /** Apps that never trigger an in-app time reminder. */
@@ -292,10 +292,6 @@ class Prefs(context: Context) {
     var largeFont: Boolean
         get() = sp.getBoolean(KEY_LARGE_FONT, false)
         set(value) = sp.edit().putBoolean(KEY_LARGE_FONT, value).apply()
-
-    var showDrawerHint: Boolean
-        get() = sp.getBoolean(KEY_DRAWER_HINT, true)
-        set(value) = sp.edit().putBoolean(KEY_DRAWER_HINT, value).apply()
 
     /** App-list text alignment: ALIGN_LEFT / ALIGN_CENTER / ALIGN_RIGHT. */
     var alignment: String
@@ -388,6 +384,7 @@ class Prefs(context: Context) {
         const val SHORTCUT_DIALER = "dialer"
         const val DEFAULT_EVENING_START = 20 * 60
         const val DEFAULT_EVENING_END = 7 * 60
+        const val DEFAULT_NUDGE_INTERVAL = 15
         const val ALIGN_LEFT = "left"
         const val ALIGN_CENTER = "center"
         const val ALIGN_RIGHT = "right"
@@ -422,7 +419,6 @@ class Prefs(context: Context) {
         private const val KEY_FILTERED_COUNTS = "filtered_counts"
         private const val KEY_THEME = "theme"
         private const val KEY_LARGE_FONT = "large_font"
-        private const val KEY_DRAWER_HINT = "drawer_hint"
         private const val KEY_ONBOARDING_DONE = "onboarding_done"
 
         @Volatile

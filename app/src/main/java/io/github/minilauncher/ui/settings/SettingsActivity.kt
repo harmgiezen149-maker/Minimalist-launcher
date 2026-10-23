@@ -19,6 +19,7 @@ import io.github.minilauncher.ui.common.EveningOverrideDialog
 import io.github.minilauncher.ui.common.PermissionChecks
 import io.github.minilauncher.ui.onboarding.OnboardingActivity
 import io.github.minilauncher.ui.stats.StatsActivity
+import io.github.minilauncher.util.Time
 
 class SettingsActivity : BaseActivity() {
 
@@ -38,12 +39,23 @@ class SettingsActivity : BaseActivity() {
     private fun render() {
         val container = findViewById<LinearLayout>(R.id.settingsContainer)
         container.removeAllViews()
+        renderFocus(container)
+        renderAllowances(container)
+        renderMode(container)
+        renderNotifications(container)
+        renderAppearance(container)
+        renderLauncher(container)
+        renderBackup(container)
+        renderAbout(container)
+    }
 
+    /** Focus mode, block lists, sessions, schedules and limits. */
+    private fun renderFocus(container: LinearLayout) {
         section(container, getString(R.string.settings_section_focus))
         row(
             container,
             getString(R.string.settings_focus_mode),
-            if (prefs.focusModeEnabled) getString(R.string.state_on) else getString(R.string.state_off),
+            onOff(prefs.focusModeEnabled),
         ) {
             prefs.focusModeEnabled = !prefs.focusModeEnabled
             render()
@@ -52,21 +64,43 @@ class SettingsActivity : BaseActivity() {
             showAppMultiPicker(
                 title = getString(R.string.settings_blocked_apps),
                 selected = prefs.blockedApps,
-            ) { prefs.blockedApps = it; render() }
+            ) {
+                prefs.blockedApps = it
+                render()
+            }
         }
         row(container, getString(R.string.settings_mindful_apps), prefs.mindfulApps.size.toString()) {
             showAppMultiPicker(
                 title = getString(R.string.settings_mindful_apps),
                 selected = prefs.mindfulApps,
-            ) { prefs.mindfulApps = it; render() }
+            ) {
+                prefs.mindfulApps = it
+                render()
+            }
         }
+        focusSessionRow(container)
+        row(container, getString(R.string.settings_blocked_sites), prefs.blockedSites.size.toString()) {
+            showBlockedSites()
+        }
+        row(container, getString(R.string.settings_schedules), prefs.schedules.size.toString()) {
+            startActivity(Intent(this, ScheduleEditorActivity::class.java))
+        }
+        row(container, getString(R.string.settings_limits), prefs.limits.size.toString()) {
+            showLimitsOverview()
+        }
+    }
+
+    /** The timed focus session: start one, or see and end the running one. */
+    private fun focusSessionRow(container: LinearLayout) {
         val sessionActive = prefs.focusSessionUntil > System.currentTimeMillis()
         row(
             container,
             getString(R.string.settings_focus_session),
             if (sessionActive) {
-                val minutes = ((prefs.focusSessionUntil - System.currentTimeMillis() + 59_999) / 60_000L).toInt()
-                getString(R.string.focus_session_remaining, minutes)
+                getString(
+                    R.string.focus_session_remaining,
+                    Time.minutesUntil(prefs.focusSessionUntil, System.currentTimeMillis()),
+                )
             } else {
                 getString(R.string.state_off)
             },
@@ -84,19 +118,14 @@ class SettingsActivity : BaseActivity() {
                 showFocusSessionPicker()
             }
         }
-        row(container, getString(R.string.settings_blocked_sites), prefs.blockedSites.size.toString()) {
-            showBlockedSites()
-        }
-        row(container, getString(R.string.settings_schedules), prefs.schedules.size.toString()) {
-            startActivity(Intent(this, ScheduleEditorActivity::class.java))
-        }
-        row(container, getString(R.string.settings_limits), prefs.limits.size.toString()) {
-            showLimitsOverview()
-        }
+    }
+
+    /** Escape hatches and reminders, still under the focus header. */
+    private fun renderAllowances(container: LinearLayout) {
         row(
             container,
             getString(R.string.settings_five_more),
-            if (prefs.allowFiveMoreMinutes) getString(R.string.state_on) else getString(R.string.state_off),
+            onOff(prefs.allowFiveMoreMinutes),
         ) {
             prefs.allowFiveMoreMinutes = !prefs.allowFiveMoreMinutes
             render()
@@ -104,8 +133,11 @@ class SettingsActivity : BaseActivity() {
         row(
             container,
             getString(R.string.settings_nudge),
-            if (prefs.nudgeIntervalMinutes == 0) getString(R.string.state_off)
-            else getString(R.string.settings_nudge_value, prefs.nudgeIntervalMinutes),
+            if (prefs.nudgeIntervalMinutes == 0) {
+                getString(R.string.state_off)
+            } else {
+                getString(R.string.settings_nudge_value, prefs.nudgeIntervalMinutes)
+            },
         ) { showNudgePicker() }
         row(
             container,
@@ -115,14 +147,20 @@ class SettingsActivity : BaseActivity() {
             showAppMultiPicker(
                 title = getString(R.string.settings_nudge_exempt),
                 selected = prefs.nudgeExemptApps,
-            ) { prefs.nudgeExemptApps = it; render() }
+            ) {
+                prefs.nudgeExemptApps = it
+                render()
+            }
         }
+    }
 
+    /** Day/evening mode; the details only while it is on. */
+    private fun renderMode(container: LinearLayout) {
         section(container, getString(R.string.settings_section_mode))
         row(
             container,
             getString(R.string.settings_mode_enabled),
-            if (prefs.dayEveningEnabled) getString(R.string.state_on) else getString(R.string.state_off),
+            onOff(prefs.dayEveningEnabled),
         ) {
             prefs.dayEveningEnabled = !prefs.dayEveningEnabled
             render()
@@ -131,16 +169,22 @@ class SettingsActivity : BaseActivity() {
             row(
                 container,
                 getString(R.string.settings_evening_start),
-                formatMinute(prefs.eveningStartMinute),
+                Time.formatMinuteOfDay(prefs.eveningStartMinute),
             ) {
-                pickTime(prefs.eveningStartMinute) { prefs.eveningStartMinute = it; render() }
+                pickTime(prefs.eveningStartMinute) {
+                    prefs.eveningStartMinute = it
+                    render()
+                }
             }
             row(
                 container,
                 getString(R.string.settings_evening_end),
-                formatMinute(prefs.eveningEndMinute),
+                Time.formatMinuteOfDay(prefs.eveningEndMinute),
             ) {
-                pickTime(prefs.eveningEndMinute) { prefs.eveningEndMinute = it; render() }
+                pickTime(prefs.eveningEndMinute) {
+                    prefs.eveningEndMinute = it
+                    render()
+                }
             }
             row(
                 container,
@@ -166,7 +210,10 @@ class SettingsActivity : BaseActivity() {
                 },
             ) { EveningOverrideDialog.show(this) { render() } }
         }
+    }
 
+    /** The notification filter. */
+    private fun renderNotifications(container: LinearLayout) {
         section(container, getString(R.string.settings_section_notifications))
         row(container, getString(R.string.settings_muted_apps), prefs.mutedApps.size.toString()) {
             if (!PermissionChecks.isNotificationListenerEnabled(this)) {
@@ -175,10 +222,16 @@ class SettingsActivity : BaseActivity() {
                 showAppMultiPicker(
                     title = getString(R.string.settings_muted_apps),
                     selected = prefs.mutedApps,
-                ) { prefs.mutedApps = it; render() }
+                ) {
+                    prefs.mutedApps = it
+                    render()
+                }
             }
         }
+    }
 
+    /** Theme, text color, alignment, font size and grayscale. */
+    private fun renderAppearance(container: LinearLayout) {
         section(container, getString(R.string.settings_section_appearance))
         row(container, getString(R.string.settings_theme), themeLabel()) { showThemePicker() }
         row(
@@ -201,15 +254,21 @@ class SettingsActivity : BaseActivity() {
         row(
             container,
             getString(R.string.settings_grayscale),
-            if (systemGrayscaleEnabled()) getString(R.string.state_on) else getString(R.string.state_off),
+            onOff(systemGrayscaleEnabled()),
         ) { toggleSystemGrayscale() }
+    }
 
+    /** Hidden apps, statistics, permissions and the default-home shortcut. */
+    private fun renderLauncher(container: LinearLayout) {
         section(container, getString(R.string.settings_section_launcher))
         row(container, getString(R.string.settings_hidden_apps), prefs.hiddenApps.size.toString()) {
             showAppMultiPicker(
                 title = getString(R.string.settings_hidden_apps),
                 selected = prefs.hiddenApps,
-            ) { prefs.hiddenApps = it; render() }
+            ) {
+                prefs.hiddenApps = it
+                render()
+            }
         }
         row(container, getString(R.string.settings_stats), "") {
             startActivity(Intent(this, StatsActivity::class.java))
@@ -222,7 +281,10 @@ class SettingsActivity : BaseActivity() {
                 startActivity(PermissionChecks.requestDefaultHomeIntent(this))
             }
         }
+    }
 
+    /** Settings export and import. */
+    private fun renderBackup(container: LinearLayout) {
         section(container, getString(R.string.settings_section_backup))
         row(container, getString(R.string.settings_export), "") {
             exportDocument.launch(getString(R.string.backup_file_name))
@@ -231,7 +293,10 @@ class SettingsActivity : BaseActivity() {
             // Any type: file managers label .json files inconsistently.
             importDocument.launch(arrayOf("*/*"))
         }
+    }
 
+    /** Version of this build. */
+    private fun renderAbout(container: LinearLayout) {
         section(container, getString(R.string.settings_section_about))
         row(
             container,
@@ -280,6 +345,8 @@ class SettingsActivity : BaseActivity() {
             .show()
     }
 
+    private fun onOff(on: Boolean): String = getString(if (on) R.string.state_on else R.string.state_off)
+
     private fun toast(message: Int) {
         android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show()
     }
@@ -305,14 +372,12 @@ class SettingsActivity : BaseActivity() {
             .show()
     }
 
-    private fun formatMinute(minute: Int): String = "%02d:%02d".format(minute / 60, minute % 60)
-
     private fun pickTime(currentMinute: Int, onPicked: (Int) -> Unit) {
         android.app.TimePickerDialog(
             this,
-            { _, hour, minute -> onPicked(hour * 60 + minute) },
-            currentMinute / 60,
-            currentMinute % 60,
+            { _, hour, minute -> onPicked(hour * Time.MINUTES_PER_HOUR + minute) },
+            currentMinute / Time.MINUTES_PER_HOUR,
+            currentMinute % Time.MINUTES_PER_HOUR,
             true,
         ).show()
     }
@@ -352,7 +417,7 @@ class SettingsActivity : BaseActivity() {
         val list = dialog.listView ?: return
         list.post {
             // Roughly a third down, so it reads as "still where you were".
-            list.setSelectionFromTop(index, list.height / 3)
+            list.setSelectionFromTop(index, list.height / REOPEN_OFFSET_DIVISOR)
         }
     }
 
@@ -416,12 +481,12 @@ class SettingsActivity : BaseActivity() {
     }
 
     private fun showFocusSessionPicker() {
-        val values = intArrayOf(15, 25, 45, 60)
+        val values = FOCUS_SESSION_MINUTES
         val labels = values.map { getString(R.string.settings_nudge_value, it) }.toTypedArray()
         AlertDialog.Builder(this)
             .setTitle(R.string.settings_focus_session)
             .setItems(labels) { _, which ->
-                prefs.focusSessionUntil = System.currentTimeMillis() + values[which] * 60_000L
+                prefs.focusSessionUntil = System.currentTimeMillis() + values[which] * Time.MINUTE_MILLIS
                 render()
             }
             .setNegativeButton(android.R.string.cancel, null)
@@ -438,7 +503,7 @@ class SettingsActivity : BaseActivity() {
             builder.setMessage(R.string.blocked_sites_empty)
         } else {
             builder.setItems(
-                sites.map { getString(R.string.blocked_sites_row, it) }.toTypedArray()
+                sites.map { getString(R.string.blocked_sites_row, it) }.toTypedArray(),
             ) { _, which ->
                 prefs.blockedSites = prefs.blockedSites - sites[which]
                 render()
@@ -460,7 +525,9 @@ class SettingsActivity : BaseActivity() {
                 val host = io.github.minilauncher.blocking.WebsiteMatcher.normalizeHost(input.text.toString())
                 if (host == null) {
                     android.widget.Toast.makeText(
-                        this, R.string.blocked_sites_invalid, android.widget.Toast.LENGTH_SHORT
+                        this,
+                        R.string.blocked_sites_invalid,
+                        android.widget.Toast.LENGTH_SHORT,
                     ).show()
                 } else {
                     prefs.blockedSites = prefs.blockedSites + host
@@ -472,7 +539,7 @@ class SettingsActivity : BaseActivity() {
     }
 
     private fun showNudgePicker() {
-        val values = intArrayOf(0, 5, 10, 15, 30, 60)
+        val values = NUDGE_INTERVAL_MINUTES
         val labels = values.map {
             if (it == 0) getString(R.string.state_off) else getString(R.string.settings_nudge_value, it)
         }.toTypedArray()
@@ -525,7 +592,7 @@ class SettingsActivity : BaseActivity() {
                 onDone(
                     apps.filterIndexed { index, _ -> checked[index] }
                         .map { it.packageName }
-                        .toSet()
+                        .toSet(),
                 )
             }
             .setNegativeButton(android.R.string.cancel, null)
@@ -567,5 +634,16 @@ class SettingsActivity : BaseActivity() {
         view.findViewById<TextView>(R.id.rowValue).text = value
         view.setOnClickListener { onClick() }
         container.addView(view)
+    }
+
+    private companion object {
+        /** Lengths offered for a timed focus session. */
+        val FOCUS_SESSION_MINUTES = intArrayOf(15, 25, 45, 60)
+
+        /** Reminder intervals; 0 switches the reminder off. */
+        val NUDGE_INTERVAL_MINUTES = intArrayOf(0, 5, 10, 15, 30, 60)
+
+        /** A reopened picker shows the last-changed app a third of the way down. */
+        const val REOPEN_OFFSET_DIVISOR = 3
     }
 }

@@ -75,4 +75,24 @@ class WebsiteMatcherTest {
         assertEquals("youtube.com", once)
         assertEquals(once, WebsiteMatcher.normalizeHost(once!!))
     }
+
+    @Test
+    fun `a blocked subdomain does not block its parent domain`() {
+        assertNull(WebsiteMatcher.matchesBlockedSite("youtube.com", setOf("m.youtube.com")))
+    }
+
+    @Test
+    fun `a host ending in the same letters is not a subdomain`() {
+        assertNull(WebsiteMatcher.matchesBlockedSite("notyoutube.com", setOf("youtube.com")))
+    }
+
+    @Test
+    fun `trailing dot and surrounding spaces are ignored`() {
+        assertEquals("youtube.com", WebsiteMatcher.normalizeHost("  youtube.com.  "))
+    }
+
+    @Test
+    fun `a host without a dot is rejected`() {
+        assertNull(WebsiteMatcher.normalizeHost("localhost"))
+    }
 }

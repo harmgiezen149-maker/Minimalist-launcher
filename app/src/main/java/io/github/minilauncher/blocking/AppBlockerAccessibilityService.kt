@@ -17,6 +17,7 @@ import io.github.minilauncher.data.model.BlockedInfo
 import io.github.minilauncher.data.model.Decision
 import io.github.minilauncher.ui.common.AppLauncher
 import io.github.minilauncher.usage.UsageRepository
+import io.github.minilauncher.util.Time
 import java.time.LocalDateTime
 import java.util.concurrent.Executors
 
@@ -114,7 +115,7 @@ class AppBlockerAccessibilityService : AccessibilityService() {
                     SystemSurfaces.shouldWatchWindowContent(
                         isBrowser = BROWSER_URL_BARS.containsKey(pkg),
                         hasBlockedSites = prefs.blockedSites.isNotEmpty(),
-                    )
+                    ),
                 )
                 executor.execute { handleForeground(pkg) }
                 maybeCheckUrl(pkg) // catches tab switches too
@@ -123,26 +124,15 @@ class AppBlockerAccessibilityService : AccessibilityService() {
         }
     }
 
-    /**
-     * Whether the event comes from the application window the user is actually
-     * interacting with, rather than one sitting behind the task switcher. Uses
-     * only window metadata — never the node tree, which is expensive to build.
-     */
-    private fun isActiveAppWindow(event: AccessibilityEvent, pkg: String): Boolean {
-        val windowList = runCatching { windows }.getOrNull()
-        if (!windowList.isNullOrEmpty()) {
-            val window = windowList.firstOrNull { it.id == event.windowId } ?: return false
-            return window.type == AccessibilityWindowInfo.TYPE_APPLICATION && window.isActive
-        }
-        // No window list (the flag is not honoured on this device): fall back to
-        // the foreground window's package. Refusing when that is unavailable is
-        // deliberate — acting on a window the user is not in kicked people out
-        // of the task switcher.
-        val activePackage = runCatching {
-            rootInActiveWindow?.packageName?.toString()
-        }.getOrNull() ?: return false
-        return activePackage == pkg
-    }
+    /** See [WindowGate]: true only for the app window the user is really in. */
+    private fun isActiveAppWindow(event: AccessibilityEvent, pkg: String): Boolean = WindowGate.isActiveAppWindow(
+        eventWindowId = event.windowId,
+        eventPackage = pkg,
+        windows = runCatching { windows }.getOrNull()?.map {
+            WindowGate.Window(it.id, it.type == AccessibilityWindowInfo.TYPE_APPLICATION, it.isActive)
+        },
+        activePackage = { runCatching { rootInActiveWindow?.packageName?.toString() }.getOrNull() },
+    )
 
     /**
      * Subscribes to window-content events only while they are needed. Leaving
@@ -172,7 +162,7 @@ class AppBlockerAccessibilityService : AccessibilityService() {
     private fun maybeCheckUrl(pkg: String) {
         val viewId = BROWSER_URL_BARS[pkg] ?: return
         val now = SystemClock.uptimeMillis()
-        if (now - lastUrlCheckMillis < 500) return
+        if (now - lastUrlCheckMillis < URL_CHECK_INTERVAL_MILLIS) return
         lastUrlCheckMillis = now
         val sites = prefs.blockedSites
         if (sites.isEmpty()) return
@@ -189,10 +179,10 @@ class AppBlockerAccessibilityService : AccessibilityService() {
 
     private fun handleBlockedSite(pkg: String, site: String) {
         // Cooldown: BACK itself triggers a burst of content events
-        if (SystemClock.uptimeMillis() - lastSiteBlockMillis < 2000) return
+        if (SystemClock.uptimeMillis() - lastSiteBlockMillis < SITE_BLOCK_COOLDOWN_MILLIS) return
         lastSiteBlockMillis = SystemClock.uptimeMillis()
         val info = BlockedInfo(pkg, BlockReason.WEBSITE, site)
-        BlockState.pendingBlock = info
+        BlockState.post(info)
         // BACK navigates the browser off the blocked page so returning to it
         // does not re-trigger. It is only safe while that browser really is in
         // front — sending it blindly can close tasks the user still wants.
@@ -212,7 +202,7 @@ class AppBlockerAccessibilityService : AccessibilityService() {
             sessionTracker.reset()
             val label = AppRepository(this).labelFor(pkg)
             val info = BlockedInfo(pkg, decision.reason, decision.detail)
-            BlockState.pendingBlock = info
+            BlockState.post(info)
             mainHandler.post {
                 performGlobalAction(GLOBAL_ACTION_HOME)
                 runCatching {
@@ -236,7 +226,7 @@ class AppBlockerAccessibilityService : AccessibilityService() {
             config = config,
             nowMillis = now,
             dayOfWeek = dateTime.dayOfWeek.value,
-            minuteOfDay = dateTime.hour * 60 + dateTime.minute,
+            minuteOfDay = dateTime.hour * Time.MINUTES_PER_HOUR + dateTime.minute,
             usageTodayMillis = { usage.todayUsageMillis(it) },
         )
     }
@@ -259,7 +249,7 @@ class AppBlockerAccessibilityService : AccessibilityService() {
                 }
             }
             scheduleSessionCheck()
-        }, 60_000L)
+        }, Time.MINUTE_MILLIS)
     }
 
     private fun maybeNudge() {
@@ -278,7 +268,7 @@ class AppBlockerAccessibilityService : AccessibilityService() {
                 NUDGE_CHANNEL,
                 getString(R.string.nudge_channel_name),
                 NotificationManager.IMPORTANCE_DEFAULT,
-            )
+            ),
         )
         val notification = Notification.Builder(this, NUDGE_CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
@@ -289,7 +279,7 @@ class AppBlockerAccessibilityService : AccessibilityService() {
         runCatching { nm.notify(pkgHash(appLabel), notification) }
     }
 
-    private fun pkgHash(s: String): Int = 0x4E55 + (s.hashCode() and 0xFFFF)
+    private fun pkgHash(s: String): Int = NUDGE_ID_BASE + (s.hashCode() and NUDGE_ID_MASK)
 
     override fun onInterrupt() {
         // no-op
@@ -305,6 +295,10 @@ class AppBlockerAccessibilityService : AccessibilityService() {
 
     companion object {
         private const val NUDGE_CHANNEL = "nudges"
+        private const val NUDGE_ID_BASE = 0x4E55
+        private const val NUDGE_ID_MASK = 0xFFFF
+        private const val URL_CHECK_INTERVAL_MILLIS = 500L
+        private const val SITE_BLOCK_COOLDOWN_MILLIS = 2_000L
 
         // Best-effort address-bar view IDs for common browsers; unknown
         // browsers simply aren't URL-checked.

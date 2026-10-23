@@ -58,7 +58,7 @@ class WheelLayoutManager(context: Context) : LinearLayoutManager(context) {
             }
             child.pivotY = child.height / 2f
             // Keeps the perspective shallow so tilted text stays crisp.
-            child.cameraDistance = 8f * viewportHeight
+            child.cameraDistance = CAMERA_DISTANCE_FACTOR * viewportHeight
 
             val scale = WheelTransform.scaleFor(signedRatio)
             child.scaleX = scale
@@ -81,5 +81,10 @@ class WheelLayoutManager(context: Context) : LinearLayoutManager(context) {
         val first = getChildAt(0) ?: return true
         val last = getChildAt(childCount - 1) ?: return true
         return first.top >= 0 && last.bottom <= viewportHeight
+    }
+
+    private companion object {
+        /** Camera distance as a multiple of the list height: a shallow perspective. */
+        const val CAMERA_DISTANCE_FACTOR = 8f
     }
 }

@@ -80,7 +80,7 @@ class BlockDecisionEngineTest {
                 focus = true,
                 schedules = listOf(workHours),
                 tempAllow = mapOf(pkg to now + 60_000L),
-            )
+            ),
         )
         assertEquals(Decision.Allow, decision)
     }
@@ -88,7 +88,7 @@ class BlockDecisionEngineTest {
     @Test
     fun `expired allowance no longer applies`() {
         val decision = evaluate(
-            config(blocked = setOf(pkg), focus = true, tempAllow = mapOf(pkg to now - 1L))
+            config(blocked = setOf(pkg), focus = true, tempAllow = mapOf(pkg to now - 1L)),
         )
         assertTrue(decision is Decision.Block)
     }
@@ -120,7 +120,10 @@ class BlockDecisionEngineTest {
             nowMillis = now,
             dayOfWeek = monday,
             minuteOfDay = noon,
-            usageTodayMillis = { consulted = true; 0L },
+            usageTodayMillis = {
+                consulted = true
+                0L
+            },
         )
         assertEquals(Decision.Allow, decision)
         assertTrue(!consulted)
@@ -135,7 +138,7 @@ class BlockDecisionEngineTest {
     @Test
     fun `mindful app is allowed while a chosen duration is active`() {
         val decision = evaluate(
-            config(mindful = setOf(pkg), tempAllow = mapOf(pkg to now + 60_000L))
+            config(mindful = setOf(pkg), tempAllow = mapOf(pkg to now + 60_000L)),
         )
         assertEquals(Decision.Allow, decision)
     }
@@ -147,7 +150,7 @@ class BlockDecisionEngineTest {
     }
 
     @Test
-    fun `limit wins over mindful so pause allowances cannot bypass the daily cap`() {
+    fun `limit is reported before the mindful pause`() {
         val decision = evaluate(
             config(mindful = setOf(pkg), limits = mapOf(pkg to 30)),
             usageMillis = 30 * 60_000L,
@@ -158,7 +161,7 @@ class BlockDecisionEngineTest {
     @Test
     fun `active focus session blocks a listed app without manual focus mode`() {
         val decision = evaluate(
-            config(blocked = setOf(pkg), focus = false, focusSessionUntil = now + 10 * 60_000L)
+            config(blocked = setOf(pkg), focus = false, focusSessionUntil = now + 10 * 60_000L),
         )
         assertTrue(decision is Decision.Block && decision.reason == BlockReason.FOCUS_MODE)
     }
@@ -166,7 +169,7 @@ class BlockDecisionEngineTest {
     @Test
     fun `expired focus session no longer blocks`() {
         val decision = evaluate(
-            config(blocked = setOf(pkg), focusSessionUntil = now - 1L)
+            config(blocked = setOf(pkg), focusSessionUntil = now - 1L),
         )
         assertEquals(Decision.Allow, decision)
     }
@@ -174,7 +177,7 @@ class BlockDecisionEngineTest {
     @Test
     fun `focus session does not block apps outside the block list`() {
         val decision = evaluate(
-            config(blocked = setOf("other.app"), focusSessionUntil = now + 10 * 60_000L)
+            config(blocked = setOf("other.app"), focusSessionUntil = now + 10 * 60_000L),
         )
         assertEquals(Decision.Allow, decision)
     }
@@ -190,5 +193,46 @@ class BlockDecisionEngineTest {
             usageMillis = 60 * 60_000L,
         )
         assertTrue(decision is Decision.Block && decision.reason == BlockReason.SCHEDULE)
+    }
+
+    @Test
+    fun `a mindful pause allowance cannot stretch the daily limit`() {
+        val decision = evaluate(
+            config(mindful = setOf(pkg), limits = mapOf(pkg to 30), tempAllow = mapOf(pkg to now + 60_000L)),
+            usageMillis = 30 * 60_000L,
+        )
+        assertTrue(decision is Decision.Block && decision.reason == BlockReason.LIMIT)
+    }
+
+    @Test
+    fun `five more minutes cannot stretch the daily limit either`() {
+        val decision = evaluate(
+            config(limits = mapOf(pkg to 30), tempAllow = mapOf(pkg to now + 5 * 60_000L)),
+            usageMillis = 31 * 60_000L,
+        )
+        assertTrue(decision is Decision.Block && decision.reason == BlockReason.LIMIT)
+    }
+
+    @Test
+    fun `an allowance lifts focus mode but the limit still applies afterwards`() {
+        val decision = evaluate(
+            config(
+                blocked = setOf(pkg),
+                focus = true,
+                limits = mapOf(pkg to 30),
+                tempAllow = mapOf(pkg to now + 60_000L),
+            ),
+            usageMillis = 45 * 60_000L,
+        )
+        assertTrue(decision is Decision.Block && decision.reason == BlockReason.LIMIT)
+    }
+
+    @Test
+    fun `an allowance under the limit still lets the app open`() {
+        val decision = evaluate(
+            config(mindful = setOf(pkg), limits = mapOf(pkg to 30), tempAllow = mapOf(pkg to now + 60_000L)),
+            usageMillis = 10 * 60_000L,
+        )
+        assertEquals(Decision.Allow, decision)
     }
 }

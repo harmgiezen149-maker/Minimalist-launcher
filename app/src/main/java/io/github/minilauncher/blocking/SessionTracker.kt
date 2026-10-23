@@ -1,11 +1,17 @@
 package io.github.minilauncher.blocking
 
+import io.github.minilauncher.util.Time
+
 /**
  * Tracks the continuous foreground session of the current app so the service
  * can post "you've been in X for N minutes" nudges. Purely in-memory.
+ *
+ * Thread-safe: the accessibility service uses it from its main thread
+ * (screen-off, the minute tick) and from its worker thread (app switches).
  */
 class SessionTracker(private val clock: () -> Long = { System.currentTimeMillis() }) {
 
+    @get:Synchronized
     var currentPackage: String? = null
         private set
 
@@ -13,6 +19,7 @@ class SessionTracker(private val clock: () -> Long = { System.currentTimeMillis(
     private var nudgesFired: Int = 0
 
     /** Call on every foreground app change. Returns true if a new session started. */
+    @Synchronized
     fun onForeground(pkg: String): Boolean {
         if (pkg == currentPackage) return false
         currentPackage = pkg
@@ -21,26 +28,26 @@ class SessionTracker(private val clock: () -> Long = { System.currentTimeMillis(
         return true
     }
 
+    @Synchronized
     fun sessionMinutes(): Int {
         if (currentPackage == null) return 0
-        return ((clock() - sessionStart) / 60_000L).toInt()
+        return ((clock() - sessionStart) / Time.MINUTE_MILLIS).toInt()
     }
 
     /**
      * Returns the nudge milestone (in minutes) that should fire now, or null.
      * Fires at every multiple of [intervalMinutes] once per milestone.
      */
+    @Synchronized
     fun dueNudgeMinutes(intervalMinutes: Int): Int? {
         if (intervalMinutes <= 0 || currentPackage == null) return null
-        val minutes = sessionMinutes()
-        val milestone = (minutes / intervalMinutes)
-        if (milestone > nudgesFired) {
-            nudgesFired = milestone
-            return milestone * intervalMinutes
-        }
-        return null
+        val milestone = sessionMinutes() / intervalMinutes
+        if (milestone <= nudgesFired) return null
+        nudgesFired = milestone
+        return milestone * intervalMinutes
     }
 
+    @Synchronized
     fun reset() {
         currentPackage = null
         sessionStart = 0L

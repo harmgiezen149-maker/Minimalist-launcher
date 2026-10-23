@@ -8,7 +8,6 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
-import androidx.core.view.doOnLayout
 import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.RecyclerView
 import io.github.minilauncher.R
@@ -21,7 +20,7 @@ import io.github.minilauncher.ui.common.AppLongPressDialog
 import io.github.minilauncher.ui.common.BaseActivity
 import io.github.minilauncher.ui.common.TextListAdapter
 import io.github.minilauncher.ui.common.WheelLayoutManager
-import kotlin.math.abs
+import io.github.minilauncher.util.VerticalSwipe
 
 class AppDrawerActivity : BaseActivity() {
 
@@ -51,7 +50,7 @@ class AppDrawerActivity : BaseActivity() {
             val state = prefs.currentModeState()
             val key = "${state.enabled}-${state.evening}"
             if (key != lastModeKey) reload()
-            handler.postDelayed(this, 30_000L)
+            handler.postDelayed(this, MODE_TICK_MILLIS)
         }
     }
 
@@ -68,42 +67,53 @@ class AppDrawerActivity : BaseActivity() {
         findViewById<RecyclerView>(R.id.appList).apply {
             layoutManager = WheelLayoutManager(this@AppDrawerActivity)
             adapter = this@AppDrawerActivity.adapter
-            // Room above and below so the first folder and the last app can
-            // scroll into the middle, where they render at full size. Without
-            // it the top row is stuck at the edge and always the smallest.
             clipToPadding = false
-            doOnLayout {
-                val room = (it.height * TOP_BOTTOM_ROOM).toInt()
-                if (paddingTop != room) setPadding(paddingLeft, room, paddingRight, room)
+            // Recomputed whenever the list's height changes: the keyboard
+            // shrinks it while searching, and room sized for the full height
+            // could then cover every row.
+            addOnLayoutChangeListener { _, _, top, _, bottom, _, oldTop, _, oldBottom ->
+                if (bottom - top != oldBottom - oldTop) post { updateListRoom() }
             }
         }
         findViewById<EditText>(R.id.searchField).doAfterTextChanged {
             query = it?.toString().orEmpty()
             rebuild()
+            updateListRoom()
         }
 
         // Swipe down while the list is at the top closes the drawer — the
         // mirror of the swipe-up that opened it.
-        gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onFling(
-                e1: MotionEvent?,
-                e2: MotionEvent,
-                velocityX: Float,
-                velocityY: Float,
-            ): Boolean {
-                if (e1 == null) return false
-                val dy = e2.y - e1.y
-                val dx = e2.x - e1.x
-                val minDistance = 100 * resources.displayMetrics.density
-                if (dy <= 0 || abs(dy) < abs(dx) || dy < minDistance || abs(velocityY) < 1500) {
-                    return false
+        gestureDetector = GestureDetector(
+            this,
+            object : GestureDetector.SimpleOnGestureListener() {
+                override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                    if (e1 == null) return false
+                    val direction = VerticalSwipe.classify(
+                        dx = e2.x - e1.x,
+                        dy = e2.y - e1.y,
+                        velocityY = velocityY,
+                        density = resources.displayMetrics.density,
+                    )
+                    if (direction != VerticalSwipe.Direction.DOWN) return false
+                    if (!findViewById<RecyclerView>(R.id.appList).canScrollVertically(-1)) finish()
+                    return true
                 }
-                if (!findViewById<RecyclerView>(R.id.appList).canScrollVertically(-1)) {
-                    finish()
-                }
-                return true
-            }
-        })
+            },
+        )
+    }
+
+    /**
+     * Room above and below the rows, so the first folder and the last app can
+     * scroll into the middle, where they render at full size. Search results
+     * get none: they should sit right under the search field, and the
+     * keyboard leaves little height to spare.
+     */
+    private fun updateListRoom() {
+        val list = findViewById<RecyclerView>(R.id.appList)
+        val room = if (query.isBlank()) (list.height * TOP_BOTTOM_ROOM).toInt() else 0
+        if (list.paddingTop != room || list.paddingBottom != room) {
+            list.setPadding(list.paddingLeft, room, list.paddingRight, room)
+        }
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
@@ -174,10 +184,12 @@ class AppDrawerActivity : BaseActivity() {
                 }
                 val byPackage = allApps.associateBy { it.packageName }
                 buildList {
-                    add(Row(getString(R.string.folder_back), onClick = {
-                        currentFolderId = null
-                        rebuild()
-                    }))
+                    add(
+                        Row(getString(R.string.folder_back), onClick = {
+                            currentFolderId = null
+                            rebuild()
+                        }),
+                    )
                     folder.packages.mapNotNull { byPackage[it] }
                         .sortedBy { it.displayLabel.lowercase() }
                         .forEach { add(appRow(it)) }
@@ -264,5 +276,8 @@ class AppDrawerActivity : BaseActivity() {
     companion object {
         /** Share of the list height kept free above and below the rows. */
         private const val TOP_BOTTOM_ROOM = 0.32f
+
+        /** Day/evening can flip while the drawer sits open; checked this often. */
+        private const val MODE_TICK_MILLIS = 30_000L
     }
 }

@@ -22,9 +22,9 @@ import io.github.minilauncher.data.AppRepository
 import io.github.minilauncher.data.Prefs
 import io.github.minilauncher.data.WeatherFetcher
 import io.github.minilauncher.data.model.AppEntry
+import io.github.minilauncher.mode.ModeState
 import io.github.minilauncher.ui.common.AppLauncher
 import io.github.minilauncher.ui.common.AppLongPressDialog
-import io.github.minilauncher.mode.ModeState
 import io.github.minilauncher.ui.common.BaseActivity
 import io.github.minilauncher.ui.common.EveningOverrideDialog
 import io.github.minilauncher.ui.common.PermissionChecks
@@ -32,7 +32,8 @@ import io.github.minilauncher.ui.common.TextListAdapter
 import io.github.minilauncher.ui.drawer.AppDrawerActivity
 import io.github.minilauncher.ui.onboarding.OnboardingActivity
 import io.github.minilauncher.ui.settings.SettingsActivity
-import kotlin.math.abs
+import io.github.minilauncher.util.Time
+import io.github.minilauncher.util.VerticalSwipe
 
 class HomeActivity : BaseActivity() {
 
@@ -46,12 +47,18 @@ class HomeActivity : BaseActivity() {
     private var lastModeKey: String? = null
 
     private val background = java.util.concurrent.Executors.newSingleThreadExecutor()
+
+    /**
+     * The temperature has its own thread: on a slow network its fetch can
+     * take seconds, and the favorites list must never queue behind it.
+     */
+    private val weather = java.util.concurrent.Executors.newSingleThreadExecutor()
     private val handler = Handler(Looper.getMainLooper())
     private val countdownTick = object : Runnable {
         override fun run() {
             updateFocusCountdown()
             syncMode()
-            handler.postDelayed(this, 30_000L)
+            handler.postDelayed(this, TICK_MILLIS)
         }
     }
 
@@ -112,29 +119,28 @@ class HomeActivity : BaseActivity() {
             }
         }
 
-        gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onFling(
-                e1: MotionEvent?,
-                e2: MotionEvent,
-                velocityX: Float,
-                velocityY: Float,
-            ): Boolean {
-                if (e1 == null) return false
-                val dy = e2.y - e1.y
-                val dx = e2.x - e1.x
-                val minDistance = 100 * resources.displayMetrics.density
-                if (abs(dy) < abs(dx) || abs(dy) < minDistance || abs(velocityY) < 1500) return false
-                if (dy < 0) {
-                    // Only treat as "open drawer" when the list has no more to scroll
-                    if (!findViewById<RecyclerView>(R.id.favoritesList).canScrollVertically(1)) {
-                        openDrawer()
+        gestureDetector = GestureDetector(
+            this,
+            object : GestureDetector.SimpleOnGestureListener() {
+                override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                    if (e1 == null) return false
+                    val direction = VerticalSwipe.classify(
+                        dx = e2.x - e1.x,
+                        dy = e2.y - e1.y,
+                        velocityY = velocityY,
+                        density = resources.displayMetrics.density,
+                    )
+                    when (direction) {
+                        // Only open the drawer when the list has no more to scroll
+                        VerticalSwipe.Direction.UP ->
+                            if (!findViewById<RecyclerView>(R.id.favoritesList).canScrollVertically(1)) openDrawer()
+                        VerticalSwipe.Direction.DOWN -> AppBlockerAccessibilityService.openNotificationShade()
+                        VerticalSwipe.Direction.NONE -> return false
                     }
-                } else {
-                    AppBlockerAccessibilityService.openNotificationShade()
+                    return true
                 }
-                return true
-            }
-        })
+            },
+        )
 
         if (!prefs.onboardingDone) {
             startActivity(Intent(this, OnboardingActivity::class.java))
@@ -165,6 +171,7 @@ class HomeActivity : BaseActivity() {
 
     override fun onDestroy() {
         background.shutdown()
+        weather.shutdown()
         super.onDestroy()
     }
 
@@ -195,12 +202,15 @@ class HomeActivity : BaseActivity() {
     private fun updateTemperature() {
         val view = findViewById<TextView>(R.id.temperature)
         val known = WeatherFetcher.lastKnown()
-        view.text = if (known != null) getString(R.string.home_temp, known)
-        else getString(R.string.home_temp_unknown)
+        view.text = if (known != null) {
+            getString(R.string.home_temp, known)
+        } else {
+            getString(R.string.home_temp_unknown)
+        }
         if (WeatherFetcher.isFresh()) return
         // Both the location lookup and the fetch are off the main thread:
         // getLastKnownLocation is a system call that can take a while.
-        background.execute {
+        weather.execute {
             val location = bestLastLocation() ?: return@execute
             val temp = WeatherFetcher.fetch(location.latitude, location.longitude) ?: return@execute
             runOnUiThread {
@@ -239,8 +249,11 @@ class HomeActivity : BaseActivity() {
     }
 
     private fun shortcutLabel(target: String): String =
-        if (target == Prefs.SHORTCUT_DIALER) getString(R.string.shortcut_dialer_label)
-        else repo.labelFor(target)
+        if (target == Prefs.SHORTCUT_DIALER) {
+            getString(R.string.shortcut_dialer_label)
+        } else {
+            repo.labelFor(target)
+        }
 
     // ---- day / evening mode ----
 
@@ -270,8 +283,11 @@ class HomeActivity : BaseActivity() {
             else -> getString(R.string.home_mode_day)
         }
         // Evening gets the brighter foreground as its subtle marker.
-        val attr = if (state.evening) android.R.attr.textColorPrimary
-        else android.R.attr.textColorSecondary
+        val attr = if (state.evening) {
+            android.R.attr.textColorPrimary
+        } else {
+            android.R.attr.textColorSecondary
+        }
         val styled = theme.obtainStyledAttributes(intArrayOf(attr))
         view.setTextColor(styled.getColor(0, view.currentTextColor))
         styled.recycle()
@@ -282,7 +298,7 @@ class HomeActivity : BaseActivity() {
         val until = prefs.focusSessionUntil
         val now = System.currentTimeMillis()
         if (until > now) {
-            val minutes = ((until - now + 59_999) / 60_000L).toInt()
+            val minutes = Time.minutesUntil(until, now)
             view.text = getString(R.string.home_focus_countdown, minutes)
             view.visibility = View.VISIBLE
         } else {
@@ -329,5 +345,10 @@ class HomeActivity : BaseActivity() {
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         // Home screen: back does nothing.
+    }
+
+    private companion object {
+        /** How often the focus countdown and the day/evening label refresh. */
+        const val TICK_MILLIS = 30_000L
     }
 }

@@ -1,5 +1,6 @@
 package io.github.minilauncher.data
 
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -94,12 +95,22 @@ class AppRepository(private val context: Context) {
         }
     }
 
+    /**
+     * Starts [pkg]. Returns false when it cannot be started — removed or
+     * disabled since the list was built — instead of crashing the launcher.
+     */
     fun launch(pkg: String): Boolean {
         val intent = context.packageManager.getLaunchIntentForPackage(pkg) ?: return false
         // RESET_TASK_IF_NEEDED resumes an app's existing task instead of
         // stacking a new one, which is what keeps the task switcher correct.
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
-        context.startActivity(intent)
-        return true
+        return try {
+            context.startActivity(intent)
+            true
+        } catch (e: ActivityNotFoundException) {
+            false
+        } catch (e: SecurityException) {
+            false
+        }
     }
 }

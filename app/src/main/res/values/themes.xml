@@ -32,7 +32,8 @@
         <item name="android:colorBackgroundCacheHint">@null</item>
     </style>
 
-    <!-- CRT text style: phosphor green on the (pure black) background -->
+    <!-- CRT text style: green text. The shade differs per theme (colors.xml
+         and values-night/colors.xml) so it stays readable on white too. -->
     <style name="ThemeOverlay.MiniLauncher.Crt" parent="">
         <item name="android:textColorPrimary">@color/crt_green</item>
         <item name="android:textColorSecondary">@color/crt_green_dim</item>

@@ -1,6 +1,7 @@
 package io.github.minilauncher.blocking
 
 import io.github.minilauncher.data.model.Schedule
+import java.time.DayOfWeek
 
 /**
  * Pure schedule-window logic. Day-of-week is ISO (1 = Monday .. 7 = Sunday);
@@ -20,7 +21,7 @@ object ScheduleEvaluator {
             start < end -> dayOfWeek in schedule.days && minuteOfDay >= start && minuteOfDay < end
             else -> {
                 // Overnight wrap: active from start on a selected day until end the next day
-                val previousDay = if (dayOfWeek == 1) 7 else dayOfWeek - 1
+                val previousDay = if (dayOfWeek == DayOfWeek.MONDAY.value) DayOfWeek.SUNDAY.value else dayOfWeek - 1
                 (dayOfWeek in schedule.days && minuteOfDay >= start) ||
                     (previousDay in schedule.days && minuteOfDay < end)
             }
