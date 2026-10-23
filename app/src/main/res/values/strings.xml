@@ -38,6 +38,9 @@
 
     <!-- Home -->
     <string name="home_all_apps">Apps</string>
+    <!-- Read by screen readers; the lists themselves show no title. -->
+    <string name="home_favorites_list">Favorite apps</string>
+    <string name="drawer_app_list">All apps</string>
     <string name="home_settings">Settings</string>
     <string name="home_empty_hint">No apps on your home screen yet. Open “Apps”, long-press one and choose “Add to home”.</string>
     <string name="blocker_disabled_warning">App blocking is configured but the blocker service is off. Tap to fix.</string>
