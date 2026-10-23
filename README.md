@@ -59,21 +59,47 @@ accessibility events is collected or stored.
 
 ## Install on your phone
 
-1. Open the repository's **Actions** tab on GitHub and pick the latest
-   green **Android APK** run.
-2. Download the `minimalist-launcher-debug-apk` artifact, unzip it, and
-   copy `app-debug.apk` to your phone (or download it on the phone).
-3. Open the APK. Allow "install unknown apps" for your browser/file
+Download the newest build on the phone itself:
+
+<https://github.com/harmgiezen149-maker/minimalist-launcher/releases/latest/download/minimalist-launcher.apk>
+
+If a download scanner holds the `.apk` at 99%, take the zipped copy and
+open the APK inside it:
+<https://github.com/harmgiezen149-maker/minimalist-launcher/releases/latest/download/minimalist-launcher-apk.zip>
+
+1. Open the APK. Allow "install unknown apps" for your browser or file
    manager when Android asks.
-4. Launch **Minimalist Launcher** and walk through the permission
+2. Launch **Minimalist Launcher** and walk through the permission
    checklist. Every permission is optional; each one unlocks the feature
    listed next to it.
 
-Updates: install a newer APK straight over the old one — all builds are
-signed with the same (throwaway, committed) key, so settings survive.
+Updates: install a newer APK straight over the old one; settings survive.
+Every build has a higher version number (Settings shows it at the bottom).
 After an update that changes the blocker service's capabilities (like the
 website blocker), toggle the service off and on once under Settings ›
 Accessibility if blocking doesn't react.
+
+Moving to a new phone, or reinstalling: Settings › Backup › Export settings
+writes everything to a file; Import settings on the new install reads it
+back. Permissions are not in the file; grant them again under Permissions.
+
+### Signing
+
+Only builds of `main` are published, and only after they pass lint and the
+tests. They are signed with a private key that exists in this repository
+solely in encrypted form (`keystore/release.p12.gpg`); the passphrase is the
+repository secret `SIGNING_PASSPHRASE`. The key is decrypted only inside the
+publish job, which runs no Gradle or other build code, and every published
+APK is checked against the certificate fingerprint in
+`keystore/release-cert.sha256`. The key was created once on GitHub's runner
+by the **Create signing key** workflow.
+
+Never replace the key: Android accepts an update only when it is signed
+with the same key as the installed app. A new key means uninstalling and
+reinstalling (export your settings first).
+
+Builds published before the move to this repository were signed with a key
+that was public; uninstall those before installing a build from here.
 
 To go back to your old home screen: Settings › Apps › Default apps ›
 Home app, or simply uninstall Minimalist Launcher.
@@ -120,12 +146,12 @@ persisted, it is recomputed from the system on demand.
 
 ## Building
 
-CI (`.github/workflows/android-build.yml`) builds with Gradle 8.14.3 /
-JDK 17 on every push that touches `minimalist-launcher/`. Locally:
+CI (`.github/workflows/build.yml`) runs lint and the unit tests and builds
+the release APK on every push, with the Gradle wrapper and JDK 17. Locally
+(needs the Android SDK):
 
 ```
-cd minimalist-launcher
-gradle testDebugUnitTest assembleDebug   # needs Android SDK 34
+./gradlew lint testDebugUnitTest assembleDebug
 ```
 
 ## On-device test checklist

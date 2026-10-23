@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import io.github.minilauncher.App
+import io.github.minilauncher.BuildConfig
 import io.github.minilauncher.R
 import io.github.minilauncher.data.AppRepository
 import io.github.minilauncher.data.Prefs
@@ -230,6 +231,13 @@ class SettingsActivity : BaseActivity() {
             // Any type: file managers label .json files inconsistently.
             importDocument.launch(arrayOf("*/*"))
         }
+
+        section(container, getString(R.string.settings_section_about))
+        row(
+            container,
+            getString(R.string.settings_version),
+            getString(R.string.settings_version_value, BuildConfig.VERSION_NAME, BuildConfig.COMMIT),
+        ) {}
     }
 
     // ---- backup ----

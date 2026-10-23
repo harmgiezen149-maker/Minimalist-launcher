@@ -172,6 +172,9 @@
     <string name="backup_import_message">Your current launcher settings are replaced by the ones in this file. Permissions are not part of the file; grant them again under Permissions.</string>
     <string name="backup_import_done">Settings imported</string>
     <string name="backup_import_failed">This is not a launcher settings file</string>
+    <string name="settings_section_about">About</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_version_value">%1$s (%2$s)</string>
     <string name="state_on">On</string>
     <string name="state_off">Off</string>
     <string name="theme_light">Light</string>

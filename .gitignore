@@ -1,3 +1,8 @@
 local.properties
 .gradle/
 build/
+
+# A decrypted signing key must never be committed.
+*.p12
+*.jks
+*.keystore

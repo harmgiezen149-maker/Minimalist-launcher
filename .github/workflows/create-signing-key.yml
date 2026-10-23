@@ -1,0 +1,48 @@
+name: Create signing key
+
+# Run once, by hand, after adding the SIGNING_PASSPHRASE secret. Creates the
+# release key on GitHub's runner, encrypted with that passphrase, commits the
+# encrypted key to main and starts a build that publishes the first APK.
+# Nobody but the passphrase owner can ever use the key.
+on: workflow_dispatch
+
+permissions:
+  contents: write # commit the encrypted key
+  actions: write # start the build afterwards
+
+jobs:
+  create:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Create the encrypted key
+        env:
+          SIGNING_PASSPHRASE: ${{ secrets.SIGNING_PASSPHRASE }}
+        run: |
+          if [ -z "$SIGNING_PASSPHRASE" ]; then
+            echo "::error::Add the SIGNING_PASSPHRASE secret first (see docs/JOUW-TAKEN.md)."
+            exit 1
+          fi
+          scripts/signing/create-key.sh keystore
+          {
+            echo "### Signing key created"
+            echo "Certificate SHA-256: \`$(cat keystore/release-cert.sha256)\`"
+          } >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Commit the encrypted key
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add keystore/release.p12.gpg keystore/release-cert.sha256
+          git commit -m "Add the encrypted release signing key"
+          git push origin HEAD:main
+
+      # Pushes made with the workflow token start no workflows, so the first
+      # signed build is started explicitly.
+      - name: Build and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh workflow run build.yml --ref main

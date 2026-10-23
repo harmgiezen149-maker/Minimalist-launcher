@@ -3,6 +3,10 @@ plugins {
     alias(libs.plugins.kotlin.android)
 }
 
+// CI numbers every build, so each APK installs as an update over the last one.
+val buildNumber = providers.environmentVariable("GITHUB_RUN_NUMBER").map(String::toInt).getOrElse(1)
+val commit = providers.environmentVariable("GITHUB_SHA").map { it.take(7) }.getOrElse("local")
+
 android {
     namespace = "io.github.minilauncher"
     compileSdk = 34
@@ -11,28 +15,25 @@ android {
         applicationId = "io.github.minilauncher"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = buildNumber
+        versionName = "1.$buildNumber"
+        buildConfigField("String", "COMMIT", "\"$commit\"")
     }
 
-    signingConfigs {
-        // Shared, committed keystore so every CI-built APK installs over the
-        // previous one; a per-runner debug key would break sideload updates.
-        getByName("debug") {
-            storeFile = rootProject.file("keystore/shared-debug.keystore")
-            storePassword = "android"
-            keyAlias = "shareddebug"
-            keyPassword = "android"
-        }
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
-        debug {
-            signingConfig = signingConfigs.getByName("debug")
-        }
+        // No signing config here: CI signs the release APK in a separate job
+        // that is the only place the key is ever decrypted (see README).
         release {
-            isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 
