@@ -113,7 +113,7 @@ jobs:
 
       - name: Smoke test failures
         if: failure()
-        run: find app/build/outputs/androidTest-results -name '*.xml' -exec grep -l '<failure' {} + | xargs -r cat
+        run: find app/build/outputs/androidTest-results -name '*.xml' -exec sh -c 'grep -q "<failure" "$1" && cat "$1"' _ {} \;
 
       - name: Upload test reports
         if: always()
