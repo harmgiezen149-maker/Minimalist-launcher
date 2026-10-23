@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
 }
 
 // CI numbers every build, so each APK installs as an update over the last one.
@@ -9,12 +8,12 @@ val commit = providers.environmentVariable("GITHUB_SHA").map { it.take(7) }.getO
 
 android {
     namespace = "io.github.minilauncher"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "io.github.minilauncher"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 36
         versionCode = buildNumber
         versionName = "1.$buildNumber"
         buildConfigField("String", "COMMIT", "\"$commit\"")
@@ -46,10 +45,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     lint {
         // Lint errors fail the build. The full list, warnings included, is
         // printed in the CI log and kept as an HTML report.
@@ -65,5 +60,5 @@ dependencies {
     implementation(libs.material)
     testImplementation(libs.junit)
     // Real org.json for unit tests; the android.jar stub throws "not mocked".
-    testImplementation("org.json:json:20240303")
+    testImplementation(libs.json)
 }
