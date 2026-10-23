@@ -39,7 +39,9 @@ jobs:
 
       - name: Lint findings
         if: always()
-        run: cat app/build/reports/lint-results-*.txt 2>/dev/null || echo "No lint report."
+        run: |
+          reports=$(find app/build -name 'lint-results*.txt' 2>/dev/null)
+          if [ -n "$reports" ]; then cat $reports; else echo "No lint report."; fi
 
       - name: Coverage summary
         if: always()

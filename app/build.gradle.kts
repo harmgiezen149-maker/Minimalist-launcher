@@ -8,7 +8,8 @@ val commit = providers.environmentVariable("GITHUB_SHA").map { it.take(7) }.getO
 
 android {
     namespace = "io.github.minilauncher"
-    compileSdk = 36
+    // 37 because AndroidX core 1.19 requires it; the app still targets 36.
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "io.github.minilauncher"
@@ -49,7 +50,6 @@ android {
         // Lint errors fail the build. The full list, warnings included, is
         // printed in the CI log and kept as an HTML report.
         abortOnError = true
-        textReport = true
     }
 }
 
