@@ -25,6 +25,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            // JaCoCo coverage of the JVM unit tests: createDebugUnitTestCoverageReport
+            enableUnitTestCoverage = true
+        }
         // No signing config here: CI signs the release APK in a separate job
         // that is the only place the key is ever decrypted (see README).
         release {
@@ -47,7 +51,11 @@ android {
     }
 
     lint {
-        abortOnError = false
+        // Lint errors fail the build. The full list, warnings included, is
+        // printed in the build log and kept as an HTML report.
+        abortOnError = true
+        textReport = true
+        textOutput = file("stdout")
     }
 }
 

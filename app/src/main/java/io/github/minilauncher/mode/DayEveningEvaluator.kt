@@ -59,7 +59,9 @@ object DayEveningEvaluator {
             // Ceil, so an active override never reads as "0 min left"
             overrideRemainingMinutes = if (overrideActive) {
                 ((overrideUntilMillis - nowMillis + 59_999) / 60_000L).toInt()
-            } else 0,
+            } else {
+                0
+            },
         )
     }
 

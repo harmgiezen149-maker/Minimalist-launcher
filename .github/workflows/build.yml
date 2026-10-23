@@ -31,8 +31,17 @@ jobs:
         with:
           cache-provider: basic # the open-source cache, not the proprietary one
 
-      - name: Lint, test and build the release APK
-        run: ./gradlew --no-daemon lint testDebugUnitTest assembleRelease
+      - name: Code style (ktlint, detekt)
+        run: scripts/check-style.sh
+
+      - name: Lint, test with coverage and build the release APK
+        run: ./gradlew --no-daemon lint createDebugUnitTestCoverageReport assembleRelease
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          report=app/build/reports/coverage/test/debug/report.xml
+          if [ -f "$report" ]; then scripts/coverage-summary.py "$report" >>"$GITHUB_STEP_SUMMARY"; fi
 
       # Exercises the exact signing path of the publish job with a throwaway
       # key, so a broken script shows up here and not on release day.

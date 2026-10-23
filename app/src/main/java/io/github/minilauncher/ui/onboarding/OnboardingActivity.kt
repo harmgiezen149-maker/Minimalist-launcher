@@ -91,7 +91,7 @@ class OnboardingActivity : BaseActivity() {
                 Intent(
                     Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                     Uri.parse("package:$packageName"),
-                )
+                ),
             )
         }
     }

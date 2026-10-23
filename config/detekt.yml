@@ -1,0 +1,38 @@
+# Additions to detekt's default rule set (detekt-cli --build-upon-default-config).
+# Thresholds are relaxed only where Android code is naturally shaped that way.
+
+complexity:
+  CyclomaticComplexMethod:
+    ignoreSimpleWhenEntries: true
+  LongParameterList:
+    # Pure decision functions take their whole context as parameters.
+    functionThreshold: 8
+    constructorThreshold: 8
+  TooManyFunctions:
+    # Activities and the settings store have many small private helpers.
+    thresholdInClasses: 25
+    thresholdInObjects: 15
+    thresholdInFiles: 25
+    ignorePrivate: true
+    ignoreOverridden: true
+
+style:
+  ReturnCount:
+    max: 3
+    excludeGuardClauses: true
+  LoopWithTooManyJumpStatements:
+    maxJumpCount: 2
+  MagicNumber:
+    # A named property is the named constant this rule asks for.
+    ignorePropertyDeclaration: true
+
+exceptions:
+  SwallowedException:
+    ignoredExceptionTypes:
+      - InterruptedException
+      - MalformedURLException
+      - NumberFormatException
+      - ParseException
+      # Starting another app: failure is reported to the user, not rethrown.
+      - ActivityNotFoundException
+      - SecurityException

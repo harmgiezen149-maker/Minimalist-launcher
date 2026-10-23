@@ -5,7 +5,10 @@ import org.json.JSONObject
 
 /** When an app is shown once day/evening mode is switched on. */
 enum class AppVisibility {
-    ALWAYS, DAY, EVENING;
+    ALWAYS,
+    DAY,
+    EVENING,
+    ;
 
     companion object {
         /** Missing or unknown values fall back to ALWAYS so older configs keep working. */

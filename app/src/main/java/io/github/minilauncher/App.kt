@@ -42,7 +42,7 @@ class App : Application() {
                 when (theme) {
                     Prefs.THEME_LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
                     else -> AppCompatDelegate.MODE_NIGHT_YES
-                }
+                },
             )
         }
     }
