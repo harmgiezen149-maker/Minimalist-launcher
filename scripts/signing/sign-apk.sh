@@ -26,11 +26,13 @@ printf '%s' "$SIGNING_PASSPHRASE" |
   --ks-pass env:SIGNING_PASSPHRASE --key-pass env:SIGNING_PASSPHRASE \
   --out "$signed" "$work/aligned.apk"
 
+# Every signer line must carry the expected certificate; the line prefix
+# differs between apksigner versions, so match on the digest label only.
 actual=$("$build_tools/apksigner" verify --print-certs "$signed" |
-  sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+  sed -n 's/^.*certificate SHA-256 digest: //p' | sort -u)
 expected=$(cat "$key_dir/release-cert.sha256")
 if [ "$actual" != "$expected" ]; then
-  echo "Signed with certificate $actual, expected $expected." >&2
+  echo "Signed with certificate(s) [$actual], expected $expected." >&2
   exit 1
 fi
 echo "Signed $signed (certificate SHA-256 $actual)"

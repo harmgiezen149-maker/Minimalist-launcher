@@ -61,11 +61,11 @@ accessibility events is collected or stored.
 
 Download the newest build on the phone itself:
 
-<https://github.com/harmgiezen149-maker/minimalist-launcher/releases/latest/download/minimalist-launcher.apk>
+<https://github.com/harmgiezen149-maker/Minimalist-launcher/releases/latest/download/minimalist-launcher.apk>
 
 If a download scanner holds the `.apk` at 99%, take the zipped copy and
 open the APK inside it:
-<https://github.com/harmgiezen149-maker/minimalist-launcher/releases/latest/download/minimalist-launcher-apk.zip>
+<https://github.com/harmgiezen149-maker/Minimalist-launcher/releases/latest/download/minimalist-launcher-apk.zip>
 
 1. Open the APK. Allow "install unknown apps" for your browser or file
    manager when Android asks.
