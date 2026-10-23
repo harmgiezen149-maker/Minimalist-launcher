@@ -58,4 +58,6 @@ jobs:
             exit 0
           fi
           git commit -m "Record reference screenshots"
+          # The branch may have moved on during the run.
+          git pull --rebase origin "$GITHUB_REF_NAME"
           git push origin "HEAD:$GITHUB_REF_NAME"

@@ -75,4 +75,6 @@ jobs:
             exit 0
           fi
           git commit -m "Update the Baseline Profile"
+          # The branch may have moved on during the run.
+          git pull --rebase origin "$GITHUB_REF_NAME"
           git push origin "HEAD:$GITHUB_REF_NAME"
