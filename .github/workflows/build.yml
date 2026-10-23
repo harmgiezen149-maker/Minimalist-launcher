@@ -40,7 +40,7 @@ jobs:
       - name: Lint findings
         if: always()
         run: |
-          reports=$(find app/build -name 'lint-results*.txt' 2>/dev/null)
+          reports=$(find app/build/reports -name 'lint-results*.txt' 2>/dev/null)
           if [ -n "$reports" ]; then cat $reports; else echo "No lint report."; fi
 
       - name: Coverage summary
