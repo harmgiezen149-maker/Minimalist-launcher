@@ -23,7 +23,7 @@ fetch "$maven/io/gitlab/arturbosch/detekt/detekt-cli/1.23.8/detekt-cli-1.23.8-al
   3afe89a11120303c73c9bdda3d8fe558dd9070a6937d27819ddc04b275381245 "$tools/detekt-1.23.8.jar"
 
 java -jar "$tools/ktlint-1.8.0.jar" ${1:+"$1"} "**/*.kt" "**/*.kts"
-java -jar "$tools/detekt-1.23.8.jar" --input app/src \
+java -jar "$tools/detekt-1.23.8.jar" --input app/src,baselineprofile/src \
   --config config/detekt.yml --build-upon-default-config \
   --baseline config/detekt-baseline.xml
 echo "Style checks passed."

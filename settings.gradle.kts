@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "minimalist-launcher"
 include(":app")
+include(":baselineprofile")

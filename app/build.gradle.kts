@@ -4,6 +4,7 @@ import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.roborazzi)
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 // CI numbers every build, so each APK installs as an update over the last one.
@@ -82,6 +83,9 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.recyclerview)
     implementation(libs.material)
+    // Installs the Baseline Profile on phones that don't get it from a store.
+    implementation(libs.androidx.profileinstaller)
+    baselineProfile(project(":baselineprofile"))
     testImplementation(libs.junit)
     // Real org.json for unit tests; the android.jar stub throws "not mocked".
     testImplementation(libs.json)
