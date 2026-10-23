@@ -467,3 +467,78 @@ eigen code: 244 van 6.752 klassen (3,6%), 1.206 van 49.946 methodes (2,4%)
 - **Vercel-instellingen** (Deployment Protection, preview-variabelen): niet bekeken, want daar had ik vanuit deze omgeving geen toegang toe. Niet aangepast, conform de opdracht. Daarom staat B12 als "onzeker".
 - **Officiële OWASP-, W3C- en GitHub Docs-pagina's:** die waren vanuit deze omgeving niet bereikbaar. Versies en data komen daar uit meerdere zoekresultaten; zie de kolom "Opgehaald" in §8. De Android-, Kotlin- en Gradle-bronnen zijn wel direct gelezen.
 - **Transitieve versies van 7 lifecycle/arch-bibliotheken:** de APK bevat daar een placeholder in plaats van een versienummer. OSV kent voor `androidx.*` geen enkele melding, dus het risico daarvan is verwaarloosbaar.
+
+---
+
+## Opvolging (23-10-2026)
+
+Alle voorstellen uit §4 zijn uitgevoerd in deze repository (`harmgiezen149-maker/Minimalist-launcher`); de launcher is daarvoor uit PW2 verhuisd, met behoud van geschiedenis (B11). Paden in de bevindingen hierboven verwijzen nog naar de oude map `minimalist-launcher/` in PW2; hier staat alles in de root. Wat alleen jij kunt doen, staat stap voor stap in [JOUW-TAKEN.md](JOUW-TAKEN.md).
+
+Jouw keuzes bij de uitvoering: herinstalleren met export/import (in plaats van sleutelrotatie), een eigen repository, een daglimiet die altijd hard is, en een lokaal crashlog van alleen de laatste crash.
+
+| ID | Status | Wat er is gedaan | Commit |
+| --- | --- | --- | --- |
+| B01 | Gedaan; sleutel maken = jouw taak 2–4 | Oude sleutel en wachtwoorden weg. De workflow "Create signing key" maakt een nieuwe sleutel op GitHub, versleuteld met jouw geheim; alleen de publish-job ontsleutelt hem. Voor de overstap: export/import van instellingen (ook in de laatste PW2-versie). | c5b8668, PW2 d5b5418 |
+| B02 | Gedaan | Gepubliceerd wordt een release-build: niet debuggable, R8 code- en resource-verkleining. | c5b8668 |
+| B03 | Gedaan | Alleen `main` publiceert; de tag `latest` wijst naar de gebouwde commit. | c5b8668 |
+| B04 | Gedaan | Build alleen-lezen, zonder opgeslagen token; aparte publish-job met schrijfrecht die geen Gradle draait; actions op SHA gepind; open-source Gradle-cache. | c5b8668 |
+| B05 | Gedaan | Lint-fouten laten de build falen, alle meldingen staan in de log. Lint vond meteen 3 verborgen fouten, waaronder een crash op Android 8/9 (zie onder). | 96e2167, 9bc003a, f934c73 |
+| B06 | Gedaan | CRT-groen is donkergroen in het lichte thema (7,9:1 en 5,1:1). | 357ecda |
+| B07 | Gedaan | Het weer heeft een eigen thread. | 357ecda |
+| B08 | Gedaan; toesteltest = jouw taak 7 | Ruimte boven/onder de lijst wordt herberekend bij elke hoogteverandering en vervalt tijdens zoeken; toetsenbord-insets via edge-to-edge; de lijst begint altijd bovenaan. De emulatortest controleert zoeken met open toetsenbord. | 357ecda, f934c73, 5c4cf60, 777caff |
+| B09 | Gedaan | Gradle 9.8.2, AGP 9.4.1 (ingebouwde Kotlin), Kotlin 2.4.21, compileSdk 37, targetSdk 36, AndroidX en Material bijgewerkt; terug-callbacks en edge-to-edge. | c24bbda, d4ebdf8, f934c73 |
+| B10 | Gedaan | 174 tests: pure logica op de JVM, Robolectric-tests voor schermen en opslag, en in elke build een vergelijking met 12 referentie-screenshots (Roborazzi). Daarnaast emulator-smoke-tests met toegankelijkheidschecks, dekking per pakket in elke CI-run, en een Baseline Profile met opstartmeting (zie onder). | 357ecda, f934c73, 5c4cf60, 1a36533, a16c529, 448b294 |
+| B11 | Gedaan | Eigen repository; publiceren vanaf `main`. | — |
+| B12 | Gedaan in code; Vercel nakijken = jouw taak 6 | In PW2: previews van de branch uit (`vercel.json`) en `api/debug-corrections.js` verwijderd. | PW2 8844487 |
+| B13 | Gedaan | Kotlin Gradle-plugin 2.4.21. | c24bbda |
+| B14 | Gedaan; toesteltest = jouw taak 7 | Blokkeer- en pauzescherm wissen de reserve-blokkade; Robolectric-test. | 357ecda, 5c4cf60 |
+| B15 | Gedaan; toesteltest = jouw taak 7 | Elk scherm bouwt zich opnieuw op als kleur of lettergrootte veranderd is. | 357ecda |
+| B16 | Gedaan (keuze: altijd hard) | Geen enkele toestemming gaat voor de daglimiet; "5 more minutes" verdwijnt bij een bereikte limiet. Tests met toestemming én limiet. | 357ecda |
+| B17 | Gedaan | `SessionTracker` thread-safe, met test vanuit twee threads. | 357ecda |
+| B18 | Gedaan | Schermtijd en de limietcontrole bij het openen van een app op de achtergrond. | 357ecda |
+| B19 | Gedaan | Een app die niet start geeft een melding in plaats van een crash. | 357ecda |
+| B20 | Gedaan | Alle tikbare teksten minstens 48 × 48 dp. | f934c73 |
+| B21 | Gedaan | TalkBack noemt de tekst-knoppen "knop". | f934c73 |
+| B22 | Gedaan | Randen van de trommel op 80% (overal ≥ 4,5:1); plat bij "animaties verwijderen". | f934c73 |
+| B23 | Gedaan | Portretvergrendeling is een instelling (standaard aan). | f934c73 |
+| B24 | Tekst gecorrigeerd; test = jouw taak 7 | Commentaar en onboarding zeggen nu wat de permissie echt doet. Volgens Android heeft de standaard-launcher al een eigen uitzondering; verwijderen na jouw test. | f934c73 |
+| B25 | Gedaan | Alleen HTTPS; back-up en overzetten bevatten alleen het instellingenbestand. | f934c73 |
+| B26 | Gedaan | Limiet 1–1440 min, schema minstens één dag, met melding. | 357ecda |
+| B27 | Gedaan (optioneel, standaard uit) | Strenge modus: tijdens een focussessie of actief schema kan niets versoepeld worden. | f934c73 |
+| B28 | Gedaan | ktlint (Android Studio-stijl) en `.editorconfig`; code eenmalig opgemaakt; CI controleert. | 96e2167 |
+| B29 | Gedaan | detekt in CI; instellingen per sectie gesplitst, lijst-dialogen eigen klasse, getallen benoemd. Twee methodes van de toegankelijkheidsdienst staan in de baseline. | 357ecda, f934c73 |
+| B30 | Gedaan | `Clock`, `showDrawerHint` en `oled_black` weg; schema's hebben een bewerkbare naam en aan/uit. | 357ecda |
+| B31 | Gedaan (keuze: alleen laatste crash) | Lokaal crashlog, te bekijken/delen/wissen in Instellingen. | f934c73 |
+| B32 | Gedaan | `versionCode` = CI-runnummer; versie en commit onderaan in Instellingen. | c5b8668 |
+| B33 | Gedaan | Gradle-wrapper met checksum. | 136eee6 |
+| B34 | Gedaan | Nieuwste actions (Node 24), gepind op SHA. | c5b8668 |
+| B35 | Config gedaan; meldingen aanzetten = jouw taak 5 | `.github/dependabot.yml` voor Gradle en Actions. | f934c73 |
+| B36 | Gedaan | README: nieuwe link, ondertekening, overstap, bouwen en testen. | c5b8668 en afronding |
+
+**Extra gevonden door de nieuwe kwaliteitspoorten** (stonden niet in de audit):
+
+- De controle op gebruikstoegang gebruikte een functie die pas vanaf Android 10 bestaat: op Android 8 en 9 zou de launcher crashen (lint `NewApi`). Opgelost in f934c73.
+- Het ophalen van de locatie ving een ingetrokken locatierecht niet zelf af (lint `MissingPermission`). Opgelost in 9bc003a.
+- Met targetSdk 36 roept Android `onBackPressed` niet meer aan; "terug doet niets" op het beginscherm zou dan weg zijn geweest. Vervangen door terug-callbacks in f934c73.
+- De eerste referentie-screenshots lieten twee dingen zien.
+  1. Rechtsonder in de dock stond `com.google.android.gm`. De standaard-snelkoppeling is Gmail, en zonder Gmail toonde de launcher de pakketnaam. Nu staat er een **+** (TalkBack zegt "Choose shortcut app") en opent een tik de keuzelijst.
+  2. Bij zwart thema met groene tekst bleef het beginscherm in de testomgeving wit. AppCompat zette bij de dag/nacht-wissel het basisthema opnieuw over de groene laag. De groene laag wordt nu na die wissel toegepast; een Robolectric-test bewaakt dit.
+
+  Opgelost in 0ca5e6d en aed530f.
+- De screenshot-vergelijking van de app-lade viel één keer anders uit. Oorzaak: de lade opende bovenaan of een derde lager, afhankelijk van wat eerst klaar was: de app-lijst of de ruimte rond de rijen. Op de telefoon kon dat ook, bijvoorbeeld na het installeren van een app. De lade begint nu altijd bovenaan. Opgelost in 777caff.
+
+**Baseline Profile en opstartmeting (B10, teststap 7).** Dit stond in de audit als "later"; het is nu ook gebouwd.
+
+- **Wat het doet:** de module `baselineprofile` legt vast welke code draait als het beginscherm start en de lade opent. Android compileert die code dan vooraf. De app komt niet uit een winkel, dus `profileinstaller` installeert het profiel.
+- **Hoe je het draait:** de handmatige workflow "Baseline profile" maakt het profiel op een emulator, meet de koude start met en zonder profiel, en commit het profiel. De gewone build compileert de generator, zodat een update die hem breekt meteen opvalt.
+- **Eerste meting** (emulator, mediaan van 5 koude starts):
+
+  | | mediaan | spreiding |
+  | --- | --- | --- |
+  | zonder profiel | 440 ms | 391–487 ms |
+  | met profiel | 472 ms | 382–532 ms |
+
+  De spreiding overlapt, dus op een software-emulator is er geen meetbaar verschil. De start is daar al snel.
+- **Wat onbekend blijft:** of het profiel op je telefoon iets uitmaakt, is vanuit CI niet te meten. Het kan geen kwaad, en Android raadt het aan.
+
+Commits: 1a36533, c492569, 448b294.

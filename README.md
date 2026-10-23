@@ -43,8 +43,15 @@ accessibility events is collected or stored.
   the evening only.
 - **Blocking schedules** — automatically block during chosen windows
   (e.g. Mon–Fri 09:00–17:00; overnight windows supported).
-- **Daily time limits** — per-app minutes budget; blocked for the rest of
-  the day once reached.
+- **Daily time limits** — per-app minutes budget (1–1440); blocked for the
+  rest of the day once reached. The limit is hard: neither a mindful-pause
+  duration nor "5 more minutes" gets an app past it.
+- **Strict mode** — optional. While a focus session or a blocking schedule
+  runs, nothing that loosens blocking can be changed: no unblocking, no
+  higher or removed limits, no cancelled session, no "5 more minutes".
+  (Uninstalling the launcher or switching off its accessibility service in
+  the system settings stays possible; Android does not allow an app to
+  prevent that.)
 - **Website blocker** — block chosen sites (e.g. youtube.com, including
   subdomains) in common browsers.
 - **Screen time dashboard** — today's usage per app and in total.
@@ -54,8 +61,17 @@ accessibility events is collected or stored.
   windows decide per app; filtered notifications are counted on the stats
   screen. Filtering cancels a notification, so one blocked during the day
   is dismissed, not held back until the evening.
-- **Themes** — monochrome Light / pure-black, white or CRT-green text, a
-  large-font option and an optional system-wide grayscale toggle.
+- **Themes** — monochrome Light / pure-black, white or CRT-green text (dark
+  green on Light, so it stays readable), a large-font option and an
+  optional system-wide grayscale toggle. Home screen and drawer stay
+  upright unless you switch that off.
+- **Accessible** — every button is at least 48 × 48 dp and announced as a
+  button by TalkBack; the drawer's drum effect keeps 4.5:1 contrast and
+  stays flat when animations are switched off.
+- **Backup** — export all settings to a file and import them again, for a
+  new phone or a reinstall.
+- **Last crash** — if the launcher ever crashes, Settings shows the error so
+  it can be looked into. It stays on the phone unless you share it.
 
 ## Install on your phone
 
@@ -146,13 +162,47 @@ persisted, it is recomputed from the system on demand.
 
 ## Building
 
-CI (`.github/workflows/build.yml`) runs lint and the unit tests and builds
-the release APK on every push, with the Gradle wrapper and JDK 17. Locally
-(needs the Android SDK):
+Gradle 9.8 (wrapper), Android Gradle plugin 9.4 with its built-in Kotlin
+2.4, JDK 17, compile SDK 37, target SDK 36, minimum SDK 26 (Android 8).
+Locally (needs the Android SDK):
 
 ```
+scripts/check-style.sh                 # ktlint + detekt
 ./gradlew lint testDebugUnitTest assembleDebug
+./gradlew connectedDebugAndroidTest    # with an emulator or phone attached
 ```
+
+Every push runs `.github/workflows/build.yml`:
+
+1. **Code style** — ktlint and detekt (`.editorconfig`, `config/detekt.yml`).
+2. **Android Lint** — errors fail the build; all findings are in the log.
+3. **Unit tests with coverage** — pure logic on the JVM, plus screens,
+   settings and the app list on Robolectric; the coverage per package is in
+   the job summary.
+4. **Screenshots** — home screen, drawer and block screen in every theme and
+   text color are compared with `app/src/test/screenshots`. After a
+   deliberate visual change, run the **Record screenshots** workflow.
+5. **Release APK** (R8-shrunk, not debuggable) and a dry run of the signing
+   scripts with a throwaway key.
+6. **Emulator smoke tests** — home screen, drawer search with the keyboard
+   open, settings, with Espresso's accessibility checks. A separate job: it
+   does not hold back publishing.
+7. **Publish** — main only: sign and update the release (see Signing).
+
+Two workflows run by hand (Actions › the workflow › Run workflow):
+
+- **Record screenshots** — records new reference screenshots and commits
+  them, after a deliberate visual change.
+- **Baseline profile** — records which code runs while the home screen
+  starts and the drawer opens, so Android compiles exactly that ahead of
+  time; measures cold start with and without the profile on an emulator
+  (the times are in the run's summary) and commits the profile to
+  `app/src/release/generated/baselineProfiles`. The app installs it through
+  `profileinstaller`, since it does not come from a store. Run it again
+  after bigger changes.
+
+Dependabot proposes updates of the Gradle dependencies and the GitHub
+Actions every week.
 
 ## On-device test checklist
 
@@ -166,3 +216,13 @@ the release APK on every push, with the Gradle wrapper and JDK 17. Locally
 - Mute an app's notifications and trigger one → it disappears; count shows
   on the stats screen.
 - Reboot → blocker and notification filter still work (services rebind).
+- Drawer: tap the search field and type one letter → results stay visible
+  above the keyboard.
+- Open a blocked app, tap "Back to focus" → the block screen does not
+  appear a second time.
+- Settings › Text color: green → the home screen is green straight away.
+- Turn off "Display over other apps" for the launcher → blocking still
+  appears just as fast (if so, that permission is not needed).
+- TalkBack on: home screen buttons are read as buttons. Run Google's
+  Accessibility Scanner on home, drawer and settings.
+- Recent-apps overview: switch between a few apps → the list stays.
