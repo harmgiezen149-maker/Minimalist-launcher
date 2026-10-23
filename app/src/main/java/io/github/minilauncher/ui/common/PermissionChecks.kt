@@ -40,11 +40,14 @@ object PermissionChecks {
 
     fun hasUsageAccess(context: Context): Boolean {
         val appOps = context.getSystemService(AppOpsManager::class.java) ?: return false
-        val mode = appOps.unsafeCheckOpNoThrow(
-            AppOpsManager.OPSTR_GET_USAGE_STATS,
-            Process.myUid(),
-            context.packageName,
-        )
+        // unsafeCheckOpNoThrow only exists from Android 10; calling it on
+        // Android 8 or 9 would crash.
+        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            appOps.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), context.packageName)
+        } else {
+            @Suppress("DEPRECATION")
+            appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), context.packageName)
+        }
         return mode == AppOpsManager.MODE_ALLOWED
     }
 

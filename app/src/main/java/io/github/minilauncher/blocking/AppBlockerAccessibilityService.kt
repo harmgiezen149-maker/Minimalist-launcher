@@ -273,7 +273,7 @@ class AppBlockerAccessibilityService : AccessibilityService() {
         val notification = Notification.Builder(this, NUDGE_CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(getString(R.string.nudge_title, appLabel))
-            .setContentText(getString(R.string.nudge_text, minutes))
+            .setContentText(resources.getQuantityString(R.plurals.nudge_text, minutes, minutes))
             .setAutoCancel(true)
             .build()
         runCatching { nm.notify(pkgHash(appLabel), notification) }

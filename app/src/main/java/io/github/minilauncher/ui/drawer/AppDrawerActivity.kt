@@ -7,6 +7,7 @@ import android.text.InputType
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.widget.EditText
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.RecyclerView
@@ -23,6 +24,16 @@ import io.github.minilauncher.ui.common.WheelLayoutManager
 import io.github.minilauncher.util.VerticalSwipe
 
 class AppDrawerActivity : BaseActivity() {
+
+    override val followsPortraitLock = true
+
+    /** Inside a folder, back returns to the folder list before it closes the drawer. */
+    private val leaveFolder = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
+            currentFolderId = null
+            rebuild()
+        }
+    }
 
     /** One drawer line: its label plus what a tap/long-press does. */
     private data class Row(
@@ -59,6 +70,8 @@ class AppDrawerActivity : BaseActivity() {
         setContentView(R.layout.activity_drawer)
         repo = AppRepository(this)
         prefs = Prefs.get(this)
+
+        onBackPressedDispatcher.addCallback(this, leaveFolder)
 
         adapter = TextListAdapter(
             onClick = { pos -> rows.getOrNull(pos)?.onClick?.invoke() },
@@ -137,18 +150,6 @@ class AppDrawerActivity : BaseActivity() {
         super.onDestroy()
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        // Inside a folder, back returns to the folder list before closing.
-        if (currentFolderId != null && query.isBlank()) {
-            currentFolderId = null
-            rebuild()
-        } else {
-            @Suppress("DEPRECATION")
-            super.onBackPressed()
-        }
-    }
-
     override fun finish() {
         super.finish()
         @Suppress("DEPRECATION")
@@ -206,6 +207,7 @@ class AppDrawerActivity : BaseActivity() {
             }
         }
         adapter.submit(rows.map { it.label })
+        leaveFolder.isEnabled = currentFolderId != null && q.isEmpty()
     }
 
     private fun folderRow(folder: Folder): Row {

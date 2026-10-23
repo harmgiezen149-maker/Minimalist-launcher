@@ -33,6 +33,9 @@
 
         <TextView
             android:id="@+id/temperature"
+            android:minHeight="48dp"
+            android:minWidth="48dp"
+            android:gravity="center_vertical"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:padding="4dp"
@@ -43,6 +46,9 @@
 
     <TextView
         android:id="@+id/modeLabel"
+        android:minHeight="48dp"
+        android:minWidth="48dp"
+        android:gravity="center_vertical"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
@@ -55,6 +61,9 @@
 
     <TextView
         android:id="@+id/focusSessionCountdown"
+        android:minHeight="48dp"
+        android:minWidth="48dp"
+        android:gravity="center_vertical"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
@@ -101,16 +110,21 @@
 
         <TextView
             android:id="@+id/shortcutLeft"
+            android:minHeight="48dp"
+            android:minWidth="48dp"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="wrap_content"
             android:padding="12dp"
-            android:gravity="start"
+            android:gravity="start|center_vertical"
             android:textSize="18sp"
             android:textColor="?android:attr/textColorPrimary" />
 
         <TextView
             android:id="@+id/allAppsButton"
+            android:minHeight="48dp"
+            android:minWidth="48dp"
+            android:gravity="center_vertical"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:padding="12dp"
@@ -120,6 +134,9 @@
 
         <TextView
             android:id="@+id/settingsButton"
+            android:minHeight="48dp"
+            android:minWidth="48dp"
+            android:gravity="center_vertical"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:padding="12dp"
@@ -129,11 +146,13 @@
 
         <TextView
             android:id="@+id/shortcutRight"
+            android:minHeight="48dp"
+            android:minWidth="48dp"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="wrap_content"
             android:padding="12dp"
-            android:gravity="end"
+            android:gravity="end|center_vertical"
             android:textSize="18sp"
             android:textColor="?android:attr/textColorPrimary" />
     </LinearLayout>

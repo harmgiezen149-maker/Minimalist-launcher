@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+: cloud backup and phone-to-phone transfer carry the settings
+     file only. The local crash log and caches stay on this phone. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="sharedpref" path="minilauncher.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="sharedpref" path="minilauncher.xml" />
+    </device-transfer>
+</data-extraction-rules>

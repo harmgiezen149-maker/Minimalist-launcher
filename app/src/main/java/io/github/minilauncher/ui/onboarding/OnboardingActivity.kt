@@ -12,6 +12,8 @@ import io.github.minilauncher.R
 import io.github.minilauncher.data.Prefs
 import io.github.minilauncher.ui.common.BaseActivity
 import io.github.minilauncher.ui.common.PermissionChecks
+import io.github.minilauncher.ui.common.announceAsButton
+import io.github.minilauncher.ui.common.announceAsButtons
 
 /**
  * Permission checklist. Every step is re-checked in onResume; all steps are
@@ -29,6 +31,7 @@ class OnboardingActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_onboarding)
+        announceAsButtons(window.decorView, R.id.doneButton)
         findViewById<TextView>(R.id.doneButton).setOnClickListener {
             Prefs.get(this).onboardingDone = true
             finish()
@@ -108,6 +111,7 @@ class OnboardingActivity : BaseActivity() {
             if (granted) getString(R.string.onboarding_step_done, title) else title
         view.findViewById<TextView>(R.id.stepDescription).text = description
         val action = view.findViewById<TextView>(R.id.stepAction)
+        action.announceAsButton()
         if (granted) {
             action.text = getString(R.string.onboarding_granted)
             action.isEnabled = false

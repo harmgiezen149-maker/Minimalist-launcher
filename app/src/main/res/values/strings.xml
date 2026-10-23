@@ -8,7 +8,10 @@
 
     <string name="nudge_channel_name">Time reminders</string>
     <string name="nudge_title">Still in %s</string>
-    <string name="nudge_text">You have been here for %d minutes.</string>
+    <plurals name="nudge_text">
+        <item quantity="one">You have been here for %d minute.</item>
+        <item quantity="other">You have been here for %d minutes.</item>
+    </plurals>
 
     <!-- Long-press menu -->
     <string name="action_add_favorite">Add to home</string>
@@ -56,7 +59,10 @@
     <string name="blocked_reason_schedule">Blocked by your schedule until %s.</string>
     <string name="blocked_reason_schedule_generic">Blocked by your schedule.</string>
     <string name="blocked_reason_limit">You reached your daily limit of %s minutes.</string>
-    <string name="blocked_usage_today">Used %d minutes today.</string>
+    <plurals name="blocked_usage_today">
+        <item quantity="one">Used %d minute today.</item>
+        <item quantity="other">Used %d minutes today.</item>
+    </plurals>
     <string name="blocked_back">Back to focus</string>
     <string name="blocked_five_more">Allow 5 more minutes</string>
     <string name="blocked_reason_mindful">Take a mindful pause before using this app.</string>
@@ -152,12 +158,15 @@
     <string name="settings_schedules">Blocking schedules</string>
     <string name="settings_limits">Daily time limits</string>
     <string name="settings_five_more">Allow “5 more minutes” button</string>
+    <string name="settings_strict_mode">Strict mode: no loosening during a focus session or schedule</string>
+    <string name="strict_locked">Strict mode: this can be loosened again after %s.</string>
     <string name="settings_nudge">In-app time reminder</string>
     <string name="settings_nudge_value">Every %d min</string>
     <string name="settings_nudge_exempt">Reminder exceptions</string>
     <string name="settings_muted_apps">Muted apps</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_font_size">Font size</string>
+    <string name="settings_lock_portrait">Keep home and drawer upright</string>
     <string name="settings_grayscale">System grayscale (advanced)</string>
     <string name="settings_hidden_apps">Hidden apps</string>
     <string name="settings_stats">Screen time today</string>
@@ -177,6 +186,11 @@
     <string name="settings_section_about">About</string>
     <string name="settings_version">Version</string>
     <string name="settings_version_value">%1$s (%2$s)</string>
+    <string name="settings_last_crash">Last crash</string>
+    <string name="crash_none">None</string>
+    <string name="crash_share">Share</string>
+    <string name="crash_share_subject">Minimalist Launcher crash report</string>
+    <string name="crash_delete">Delete</string>
     <string name="state_on">On</string>
     <string name="state_off">Off</string>
     <string name="theme_light">Light</string>
@@ -222,5 +236,5 @@
     <string name="onboarding_post_notif_title">Reminder notifications</string>
     <string name="onboarding_post_notif_desc">Lets the launcher send gentle “you have been in this app for a while” reminders.</string>
     <string name="onboarding_overlay_title">Display over other apps (optional)</string>
-    <string name="onboarding_overlay_desc">Makes the block screen appear faster over a blocked app.</string>
+    <string name="onboarding_overlay_desc">Lets the block screen open even when Android holds back screens started in the background. Usually not needed while this is your default launcher.</string>
 </resources>

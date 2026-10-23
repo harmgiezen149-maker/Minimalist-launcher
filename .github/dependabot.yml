@@ -1,0 +1,28 @@
+# Weekly update proposals (pull requests to main) for the Gradle build and the
+# GitHub Actions, which are pinned to commit SHAs. Security fixes come sooner
+# once Dependabot alerts are on (repository Settings › Advanced Security).
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      androidx:
+        patterns:
+          - "androidx.*"
+          - "com.google.android.material*"
+      build-tools:
+        patterns:
+          - "com.android.*"
+          - "org.jetbrains.kotlin*"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns:
+          - "*"

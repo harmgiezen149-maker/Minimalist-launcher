@@ -62,12 +62,16 @@ object AppLongPressDialog {
         val limit = prefs.limits[pkg]
         return listOf(
             if (pkg in prefs.blockedApps) {
-                activity.getString(R.string.action_unblock) to { prefs.blockedApps = prefs.blockedApps - pkg }
+                activity.getString(R.string.action_unblock) to {
+                    StrictModeGate.loosen(activity) { prefs.blockedApps = prefs.blockedApps - pkg }
+                }
             } else {
                 activity.getString(R.string.action_block) to { prefs.blockedApps = prefs.blockedApps + pkg }
             },
             if (pkg in prefs.mindfulApps) {
-                activity.getString(R.string.action_mindful_off) to { prefs.mindfulApps = prefs.mindfulApps - pkg }
+                activity.getString(R.string.action_mindful_off) to {
+                    StrictModeGate.loosen(activity) { prefs.mindfulApps = prefs.mindfulApps - pkg }
+                }
             } else {
                 activity.getString(R.string.action_mindful_on) to { prefs.mindfulApps = prefs.mindfulApps + pkg }
             },
@@ -250,12 +254,15 @@ object AppLongPressDialog {
                     // remove the limit without saying so.
                     Toast.makeText(activity, R.string.limit_invalid, Toast.LENGTH_LONG).show()
                 } else {
-                    prefs.setLimit(entry.packageName, minutes)
+                    val current = prefs.limits[entry.packageName]
+                    val save = { prefs.setLimit(entry.packageName, minutes) }
+                    // A higher limit loosens; a new or lower one only tightens.
+                    if (current != null && minutes > current) StrictModeGate.loosen(activity, save) else save()
                 }
                 onChanged()
             }
             .setNeutralButton(R.string.limit_remove) { _, _ ->
-                prefs.setLimit(entry.packageName, null)
+                StrictModeGate.loosen(activity) { prefs.setLimit(entry.packageName, null) }
                 onChanged()
             }
             .setNegativeButton(android.R.string.cancel, null)

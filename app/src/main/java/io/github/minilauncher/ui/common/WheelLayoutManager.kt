@@ -1,5 +1,6 @@
 package io.github.minilauncher.ui.common
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -39,8 +40,9 @@ class WheelLayoutManager(context: Context) : LinearLayoutManager(context) {
         if (viewportHeight == 0 || childCount == 0) return
 
         // Nothing to roll: a list that fits on screen stays flat, so a single
-        // search result never renders as shrunken text.
-        if (contentFits(viewportHeight)) {
+        // search result never renders as shrunken text. With "remove
+        // animations" switched on in the system settings it stays flat too.
+        if (!ValueAnimator.areAnimatorsEnabled() || contentFits(viewportHeight)) {
             for (i in 0 until childCount) getChildAt(i)?.let(::reset)
             return
         }

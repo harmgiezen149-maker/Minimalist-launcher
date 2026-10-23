@@ -8,6 +8,7 @@ import android.content.IntentFilter
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import io.github.minilauncher.data.AppRepository
+import io.github.minilauncher.data.CrashLog
 import io.github.minilauncher.data.Prefs
 
 class App : Application() {
@@ -21,6 +22,7 @@ class App : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        CrashLog.install(this)
         applyNightMode(Prefs.get(this).theme)
         ContextCompat.registerReceiver(
             this,

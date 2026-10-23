@@ -12,6 +12,8 @@ import io.github.minilauncher.R
 import io.github.minilauncher.data.Prefs
 import io.github.minilauncher.data.model.Schedule
 import io.github.minilauncher.ui.common.BaseActivity
+import io.github.minilauncher.ui.common.StrictModeGate
+import io.github.minilauncher.ui.common.announceAsButtons
 import io.github.minilauncher.util.Time
 import java.time.DayOfWeek
 import java.util.UUID
@@ -25,6 +27,7 @@ class ScheduleEditorActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_schedules)
         prefs = Prefs.get(this)
+        announceAsButtons(window.decorView, R.id.addScheduleButton)
         findViewById<TextView>(R.id.addScheduleButton).setOnClickListener {
             pickDays(
                 Schedule(
@@ -71,16 +74,25 @@ class ScheduleEditorActivity : BaseActivity() {
         return "$name · $days · ${Time.formatMinuteOfDay(s.startMinute)}–${Time.formatMinuteOfDay(s.endMinute)}"
     }
 
+    /**
+     * Renaming is always possible; changing times, switching off and deleting
+     * can loosen blocking, so strict mode gates them.
+     */
     private fun showMenu(schedule: Schedule) {
         val actions = listOf(
-            getString(R.string.schedule_edit_times) to { pickDays(schedule, isNew = false) },
+            getString(R.string.schedule_edit_times) to {
+                StrictModeGate.loosen(this) { pickDays(schedule, isNew = false) }
+            },
             getString(R.string.schedule_rename) to { rename(schedule) },
             getString(if (schedule.enabled) R.string.schedule_turn_off else R.string.schedule_turn_on) to {
-                save(schedule.copy(enabled = !schedule.enabled), isNew = false)
+                val toggle = { save(schedule.copy(enabled = !schedule.enabled), isNew = false) }
+                if (schedule.enabled) StrictModeGate.loosen(this, toggle) else toggle()
             },
             getString(R.string.schedule_delete) to {
-                prefs.schedules = prefs.schedules.filterNot { it.id == schedule.id }
-                render()
+                StrictModeGate.loosen(this) {
+                    prefs.schedules = prefs.schedules.filterNot { it.id == schedule.id }
+                    render()
+                }
             },
         )
         AlertDialog.Builder(this)

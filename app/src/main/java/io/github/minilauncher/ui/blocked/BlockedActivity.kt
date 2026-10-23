@@ -14,6 +14,8 @@ import io.github.minilauncher.ui.common.AppLauncher
 import io.github.minilauncher.ui.common.Async
 import io.github.minilauncher.ui.common.BaseActivity
 import io.github.minilauncher.ui.common.PermissionChecks
+import io.github.minilauncher.ui.common.StrictModeGate
+import io.github.minilauncher.ui.common.announceAsButtons
 import io.github.minilauncher.usage.UsageRepository
 import io.github.minilauncher.util.Time
 
@@ -38,6 +40,7 @@ class BlockedActivity : BaseActivity() {
             if (reason == BlockReason.WEBSITE) detail else label
         findViewById<TextView>(R.id.blockedReason).text = reasonText(reason, detail)
         showUsageToday(pkg, reason)
+        announceAsButtons(window.decorView, R.id.backButton, R.id.fiveMoreButton)
         findViewById<TextView>(R.id.backButton).setOnClickListener { finish() }
         setUpFiveMore(pkg, reason, detail)
     }
@@ -64,19 +67,21 @@ class BlockedActivity : BaseActivity() {
             return
         }
         val usage = UsageRepository.get(this)
-        Async.load(this, { usage.todayUsageMillis(pkg) / Time.MINUTE_MILLIS }) { minutes ->
-            usageView.text = getString(R.string.blocked_usage_today, minutes)
+        Async.load(this, { (usage.todayUsageMillis(pkg) / Time.MINUTE_MILLIS).toInt() }) { minutes ->
+            usageView.text = resources.getQuantityString(R.plurals.blocked_usage_today, minutes, minutes)
         }
     }
 
     /**
-     * The opt-in escape hatch. Not offered for the daily limit: that limit is
-     * hard, and no allowance gets past it.
+     * The opt-in escape hatch. Not offered for the daily limit, which is hard
+     * and no allowance gets past, nor while strict mode holds loosening back.
      */
     private fun setUpFiveMore(pkg: String, reason: BlockReason, detail: String) {
         val fiveMore = findViewById<TextView>(R.id.fiveMoreButton)
         val prefs = Prefs.get(this)
-        if (!prefs.allowFiveMoreMinutes || reason == BlockReason.LIMIT) {
+        val offered = prefs.allowFiveMoreMinutes && reason != BlockReason.LIMIT &&
+            StrictModeGate.currentLock(this) == null
+        if (!offered) {
             fiveMore.visibility = View.GONE
             return
         }

@@ -242,6 +242,11 @@ class Prefs(context: Context) {
         get() = sp.getStringSet(KEY_BLOCKED_SITES, emptySet())!!.toSet()
         set(value) = sp.edit().putStringSet(KEY_BLOCKED_SITES, value).apply()
 
+    /** No loosening while a focus session or schedule runs; see StrictGuard. */
+    var strictMode: Boolean
+        get() = sp.getBoolean(KEY_STRICT_MODE, false)
+        set(value) = sp.edit().putBoolean(KEY_STRICT_MODE, value).apply()
+
     var allowFiveMoreMinutes: Boolean
         get() = sp.getBoolean(KEY_ALLOW_FIVE_MORE, true)
         set(value) = sp.edit().putBoolean(KEY_ALLOW_FIVE_MORE, value).apply()
@@ -297,6 +302,11 @@ class Prefs(context: Context) {
     var alignment: String
         get() = sp.getString(KEY_ALIGNMENT, ALIGN_LEFT)!!
         set(value) = sp.edit().putString(KEY_ALIGNMENT, value).apply()
+
+    /** Home screen and app drawer stay upright; on by default, as before it was a setting. */
+    var lockPortrait: Boolean
+        get() = sp.getBoolean(KEY_LOCK_PORTRAIT, true)
+        set(value) = sp.edit().putBoolean(KEY_LOCK_PORTRAIT, value).apply()
 
     /** CRT-style green text instead of white/black. */
     var crtGreen: Boolean
@@ -405,11 +415,13 @@ class Prefs(context: Context) {
         private const val KEY_LIMITS = "limits"
         private const val KEY_TEMP_ALLOW = "temp_allow_until"
         private const val KEY_ALLOW_FIVE_MORE = "allow_five_more"
+        private const val KEY_STRICT_MODE = "strict_mode"
         private const val KEY_MINDFUL = "mindful_apps"
         private const val KEY_FOCUS_SESSION = "focus_session_until"
         private const val KEY_BLOCKED_SITES = "blocked_sites"
         private const val KEY_CRT_GREEN = "crt_green"
         private const val KEY_ALIGNMENT = "alignment"
+        private const val KEY_LOCK_PORTRAIT = "lock_portrait"
         private const val KEY_SHORTCUT_LEFT = "shortcut_left"
         private const val KEY_SHORTCUT_RIGHT = "shortcut_right"
         private const val KEY_NUDGE_INTERVAL = "nudge_interval_min"

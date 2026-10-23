@@ -41,6 +41,9 @@
 
     <TextView
         android:id="@+id/backButton"
+        android:minHeight="48dp"
+        android:minWidth="48dp"
+        android:gravity="center_vertical"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="48dp"
@@ -52,6 +55,9 @@
 
     <TextView
         android:id="@+id/fiveMoreButton"
+        android:minHeight="48dp"
+        android:minWidth="48dp"
+        android:gravity="center_vertical"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"

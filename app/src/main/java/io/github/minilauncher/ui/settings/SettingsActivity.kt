@@ -12,11 +12,13 @@ import io.github.minilauncher.App
 import io.github.minilauncher.BuildConfig
 import io.github.minilauncher.R
 import io.github.minilauncher.data.AppRepository
+import io.github.minilauncher.data.CrashLog
 import io.github.minilauncher.data.Prefs
 import io.github.minilauncher.ui.common.AppLongPressDialog
 import io.github.minilauncher.ui.common.BaseActivity
 import io.github.minilauncher.ui.common.EveningOverrideDialog
 import io.github.minilauncher.ui.common.PermissionChecks
+import io.github.minilauncher.ui.common.StrictModeGate
 import io.github.minilauncher.ui.onboarding.OnboardingActivity
 import io.github.minilauncher.ui.stats.StatsActivity
 import io.github.minilauncher.util.Time
@@ -24,6 +26,7 @@ import io.github.minilauncher.util.Time
 class SettingsActivity : BaseActivity() {
 
     private lateinit var prefs: Prefs
+    private val appLists by lazy { AppListDialogs(this) { render() } }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,22 +64,16 @@ class SettingsActivity : BaseActivity() {
             render()
         }
         row(container, getString(R.string.settings_blocked_apps), prefs.blockedApps.size.toString()) {
-            showAppMultiPicker(
+            appLists.showMultiPicker(
                 title = getString(R.string.settings_blocked_apps),
                 selected = prefs.blockedApps,
-            ) {
-                prefs.blockedApps = it
-                render()
-            }
+            ) { chosen -> applyBlockList(prefs.blockedApps, chosen) { prefs.blockedApps = it } }
         }
         row(container, getString(R.string.settings_mindful_apps), prefs.mindfulApps.size.toString()) {
-            showAppMultiPicker(
+            appLists.showMultiPicker(
                 title = getString(R.string.settings_mindful_apps),
                 selected = prefs.mindfulApps,
-            ) {
-                prefs.mindfulApps = it
-                render()
-            }
+            ) { chosen -> applyBlockList(prefs.mindfulApps, chosen) { prefs.mindfulApps = it } }
         }
         focusSessionRow(container)
         row(container, getString(R.string.settings_blocked_sites), prefs.blockedSites.size.toString()) {
@@ -109,8 +106,10 @@ class SettingsActivity : BaseActivity() {
                 AlertDialog.Builder(this)
                     .setTitle(R.string.focus_session_cancel_title)
                     .setPositiveButton(android.R.string.ok) { _, _ ->
-                        prefs.focusSessionUntil = 0L
-                        render()
+                        StrictModeGate.loosen(this) {
+                            prefs.focusSessionUntil = 0L
+                            render()
+                        }
                     }
                     .setNegativeButton(android.R.string.cancel, null)
                     .show()
@@ -120,6 +119,15 @@ class SettingsActivity : BaseActivity() {
         }
     }
 
+    /** Saves a new block or mindful list; taking apps off it counts as loosening. */
+    private fun applyBlockList(current: Set<String>, chosen: Set<String>, save: (Set<String>) -> Unit) {
+        val apply = {
+            save(chosen)
+            render()
+        }
+        if (chosen.containsAll(current)) apply() else StrictModeGate.loosen(this, apply)
+    }
+
     /** Escape hatches and reminders, still under the focus header. */
     private fun renderAllowances(container: LinearLayout) {
         row(
@@ -127,8 +135,26 @@ class SettingsActivity : BaseActivity() {
             getString(R.string.settings_five_more),
             onOff(prefs.allowFiveMoreMinutes),
         ) {
-            prefs.allowFiveMoreMinutes = !prefs.allowFiveMoreMinutes
-            render()
+            if (prefs.allowFiveMoreMinutes) {
+                prefs.allowFiveMoreMinutes = false
+                render()
+            } else {
+                StrictModeGate.loosen(this) {
+                    prefs.allowFiveMoreMinutes = true
+                    render()
+                }
+            }
+        }
+        row(container, getString(R.string.settings_strict_mode), onOff(prefs.strictMode)) {
+            if (prefs.strictMode) {
+                StrictModeGate.loosen(this) {
+                    prefs.strictMode = false
+                    render()
+                }
+            } else {
+                prefs.strictMode = true
+                render()
+            }
         }
         row(
             container,
@@ -144,7 +170,7 @@ class SettingsActivity : BaseActivity() {
             getString(R.string.settings_nudge_exempt),
             prefs.nudgeExemptApps.size.toString(),
         ) {
-            showAppMultiPicker(
+            appLists.showMultiPicker(
                 title = getString(R.string.settings_nudge_exempt),
                 selected = prefs.nudgeExemptApps,
             ) {
@@ -190,12 +216,12 @@ class SettingsActivity : BaseActivity() {
                 container,
                 getString(R.string.settings_app_visibility),
                 prefs.appVisibility.size.toString(),
-            ) { showAppVisibilityList() }
+            ) { appLists.showVisibilityList() }
             row(
                 container,
                 getString(R.string.settings_notification_windows),
                 prefs.notificationWindows.size.toString(),
-            ) { showNotificationWindowList() }
+            ) { appLists.showNotificationWindowList() }
             val overrideActive = prefs.eveningOverrideUntil > System.currentTimeMillis()
             row(
                 container,
@@ -219,7 +245,7 @@ class SettingsActivity : BaseActivity() {
             if (!PermissionChecks.isNotificationListenerEnabled(this)) {
                 startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
             } else {
-                showAppMultiPicker(
+                appLists.showMultiPicker(
                     title = getString(R.string.settings_muted_apps),
                     selected = prefs.mutedApps,
                 ) {
@@ -243,6 +269,10 @@ class SettingsActivity : BaseActivity() {
             recreate()
         }
         row(container, getString(R.string.settings_alignment), alignmentLabel()) { showAlignmentPicker() }
+        row(container, getString(R.string.settings_lock_portrait), onOff(prefs.lockPortrait)) {
+            prefs.lockPortrait = !prefs.lockPortrait
+            render()
+        }
         row(
             container,
             getString(R.string.settings_font_size),
@@ -262,7 +292,7 @@ class SettingsActivity : BaseActivity() {
     private fun renderLauncher(container: LinearLayout) {
         section(container, getString(R.string.settings_section_launcher))
         row(container, getString(R.string.settings_hidden_apps), prefs.hiddenApps.size.toString()) {
-            showAppMultiPicker(
+            appLists.showMultiPicker(
                 title = getString(R.string.settings_hidden_apps),
                 selected = prefs.hiddenApps,
             ) {
@@ -303,6 +333,12 @@ class SettingsActivity : BaseActivity() {
             getString(R.string.settings_version),
             getString(R.string.settings_version_value, BuildConfig.VERSION_NAME, BuildConfig.COMMIT),
         ) {}
+        val crash = CrashLog.read(this)
+        row(
+            container,
+            getString(R.string.settings_last_crash),
+            crash?.lineSequence()?.firstOrNull()?.removePrefix("Time: ") ?: getString(R.string.crash_none),
+        ) { if (crash != null) showCrash(crash) }
     }
 
     // ---- backup ----
@@ -345,6 +381,26 @@ class SettingsActivity : BaseActivity() {
             .show()
     }
 
+    /** The last crash, to read, share (for example by e-mail) or delete. */
+    private fun showCrash(report: String) {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.settings_last_crash)
+            .setMessage(report)
+            .setPositiveButton(R.string.crash_share) { _, _ ->
+                val send = Intent(Intent.ACTION_SEND)
+                    .setType("text/plain")
+                    .putExtra(Intent.EXTRA_SUBJECT, getString(R.string.crash_share_subject))
+                    .putExtra(Intent.EXTRA_TEXT, report)
+                startActivity(Intent.createChooser(send, getString(R.string.crash_share)))
+            }
+            .setNeutralButton(R.string.crash_delete) { _, _ ->
+                CrashLog.clear(this)
+                render()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
     private fun onOff(on: Boolean): String = getString(if (on) R.string.state_on else R.string.state_off)
 
     private fun toast(message: Int) {
@@ -380,81 +436,6 @@ class SettingsActivity : BaseActivity() {
             currentMinute % Time.MINUTES_PER_HOUR,
             true,
         ).show()
-    }
-
-    /**
-     * Every app with its day/evening visibility; tap one to change it. After a
-     * change the list reopens scrolled to [focusPackage], so several apps can
-     * be set in a row without hunting through the list again.
-     */
-    private fun showAppVisibilityList(focusPackage: String? = null) {
-        val apps = AppRepository(this).allApps(includeHidden = true, respectMode = false)
-        val labels = apps.map {
-            getString(
-                R.string.app_visibility_row,
-                it.displayLabel,
-                AppLongPressDialog.visibilityLabel(this, prefs.visibilityFor(it.packageName)),
-            )
-        }.toTypedArray()
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(R.string.settings_app_visibility)
-            .setItems(labels) { _, which ->
-                val pkg = apps[which].packageName
-                AppLongPressDialog.showVisibilityPicker(this, apps[which]) {
-                    render()
-                    showAppVisibilityList(focusPackage = pkg)
-                }
-            }
-            .setPositiveButton(android.R.string.ok, null)
-            .create()
-        dialog.show()
-        scrollToApp(dialog, apps.indexOfFirst { it.packageName == focusPackage })
-    }
-
-    /** Keeps the just-configured app in view when a picker list reopens. */
-    private fun scrollToApp(dialog: AlertDialog, index: Int) {
-        if (index < 0) return
-        val list = dialog.listView ?: return
-        list.post {
-            // Roughly a third down, so it reads as "still where you were".
-            list.setSelectionFromTop(index, list.height / REOPEN_OFFSET_DIVISOR)
-        }
-    }
-
-    /** Every app with its notification window; tap one to change it. */
-    private fun showNotificationWindowList(focusPackage: String? = null) {
-        // Only warn when opening the list, not on every reopen after a change.
-        if (focusPackage == null && !PermissionChecks.isNotificationListenerEnabled(this)) {
-            android.widget.Toast.makeText(
-                this,
-                R.string.notification_windows_needs_access,
-                android.widget.Toast.LENGTH_LONG,
-            ).show()
-        }
-        val apps = AppRepository(this).allApps(includeHidden = true, respectMode = false)
-        val labels = apps.map {
-            getString(
-                R.string.app_visibility_row,
-                it.displayLabel,
-                AppLongPressDialog.notificationWindowLabel(
-                    this,
-                    prefs.notificationWindowFor(it.packageName),
-                ),
-            )
-        }.toTypedArray()
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(R.string.settings_notification_windows)
-            .setItems(labels) { _, which ->
-                val pkg = apps[which].packageName
-                AppLongPressDialog.showNotificationWindowPicker(this, apps[which]) {
-                    render()
-                    showNotificationWindowList(focusPackage = pkg)
-                }
-            }
-            .setPositiveButton(android.R.string.ok, null)
-            .create()
-        dialog.show()
-        scrollToApp(dialog, apps.indexOfFirst { it.packageName == focusPackage })
     }
 
     private fun alignmentLabel(): String = when (prefs.alignment) {
@@ -505,8 +486,10 @@ class SettingsActivity : BaseActivity() {
             builder.setItems(
                 sites.map { getString(R.string.blocked_sites_row, it) }.toTypedArray(),
             ) { _, which ->
-                prefs.blockedSites = prefs.blockedSites - sites[which]
-                render()
+                StrictModeGate.loosen(this) {
+                    prefs.blockedSites = prefs.blockedSites - sites[which]
+                    render()
+                }
             }
         }
         builder.show()
@@ -570,32 +553,12 @@ class SettingsActivity : BaseActivity() {
         AlertDialog.Builder(this)
             .setTitle(R.string.settings_limits)
             .setItems(labels) { _, which ->
-                prefs.setLimit(limits[which].first, null)
-                render()
+                StrictModeGate.loosen(this) {
+                    prefs.setLimit(limits[which].first, null)
+                    render()
+                }
             }
             .setPositiveButton(android.R.string.ok, null)
-            .show()
-    }
-
-    private fun showAppMultiPicker(
-        title: String,
-        selected: Set<String>,
-        onDone: (Set<String>) -> Unit,
-    ) {
-        val apps = AppRepository(this).allApps(includeHidden = true, respectMode = false)
-        val labels = apps.map { it.displayLabel }.toTypedArray()
-        val checked = apps.map { it.packageName in selected }.toBooleanArray()
-        AlertDialog.Builder(this)
-            .setTitle(title)
-            .setMultiChoiceItems(labels, checked) { _, which, isChecked -> checked[which] = isChecked }
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                onDone(
-                    apps.filterIndexed { index, _ -> checked[index] }
-                        .map { it.packageName }
-                        .toSet(),
-                )
-            }
-            .setNegativeButton(android.R.string.cancel, null)
             .show()
     }
 
@@ -642,8 +605,5 @@ class SettingsActivity : BaseActivity() {
 
         /** Reminder intervals; 0 switches the reminder off. */
         val NUDGE_INTERVAL_MINUTES = intArrayOf(0, 5, 10, 15, 30, 60)
-
-        /** A reopened picker shows the last-changed app a third of the way down. */
-        const val REOPEN_OFFSET_DIVISOR = 3
     }
 }

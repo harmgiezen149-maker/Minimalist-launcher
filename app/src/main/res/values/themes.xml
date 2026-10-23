@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Deliberately monochrome in both light and dark to reduce visual
-         stimulation; colors resolve per mode via values-night/colors.xml. -->
+         stimulation; colors resolve per mode via values-night/colors.xml.
+         System bars are transparent (edge to edge, see BaseActivity), with
+         icon colors following the theme. -->
     <style name="Theme.MiniLauncher" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">@color/mono_accent</item>
         <item name="colorPrimaryVariant">@color/mono_accent</item>
@@ -14,9 +16,6 @@
         <item name="android:windowBackground">@color/mono_background</item>
         <item name="android:textColorPrimary">@color/mono_text_primary</item>
         <item name="android:textColorSecondary">@color/mono_text_secondary</item>
-        <item name="android:statusBarColor">@color/mono_background</item>
-        <item name="android:navigationBarColor">@color/mono_background</item>
-        <item name="android:windowLightStatusBar">true</item>
     </style>
 
     <!--

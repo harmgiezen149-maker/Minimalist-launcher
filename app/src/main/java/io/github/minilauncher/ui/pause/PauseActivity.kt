@@ -15,6 +15,7 @@ import io.github.minilauncher.blocking.BlockState
 import io.github.minilauncher.data.Prefs
 import io.github.minilauncher.ui.common.AppLauncher
 import io.github.minilauncher.ui.common.BaseActivity
+import io.github.minilauncher.ui.common.announceAsButton
 import io.github.minilauncher.util.Time
 
 /**
@@ -44,6 +45,7 @@ class PauseActivity : BaseActivity() {
         for (minutes in DURATION_MINUTES) {
             val button = layoutInflater.inflate(R.layout.item_app_text, durationsRow, false) as TextView
             button.text = getString(R.string.pause_minutes, minutes)
+            button.announceAsButton()
             button.setOnClickListener {
                 prefs.allowTemporarily(pkg, System.currentTimeMillis() + minutes * Time.MINUTE_MILLIS)
                 AppLauncher.open(this, pkg)
@@ -52,7 +54,10 @@ class PauseActivity : BaseActivity() {
             durationsRow.addView(button)
         }
 
-        findViewById<TextView>(R.id.neverMindButton).setOnClickListener { finish() }
+        findViewById<TextView>(R.id.neverMindButton).apply {
+            announceAsButton()
+            setOnClickListener { finish() }
+        }
 
         val circle = findViewById<View>(R.id.breathingCircle)
         animator = ValueAnimator.ofFloat(BREATH_MIN_SCALE, 1f).apply {

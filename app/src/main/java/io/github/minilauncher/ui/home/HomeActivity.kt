@@ -11,6 +11,7 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
 import android.widget.TextView
+import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -28,7 +29,9 @@ import io.github.minilauncher.ui.common.AppLongPressDialog
 import io.github.minilauncher.ui.common.BaseActivity
 import io.github.minilauncher.ui.common.EveningOverrideDialog
 import io.github.minilauncher.ui.common.PermissionChecks
+import io.github.minilauncher.ui.common.StrictModeGate
 import io.github.minilauncher.ui.common.TextListAdapter
+import io.github.minilauncher.ui.common.announceAsButtons
 import io.github.minilauncher.ui.drawer.AppDrawerActivity
 import io.github.minilauncher.ui.onboarding.OnboardingActivity
 import io.github.minilauncher.ui.settings.SettingsActivity
@@ -36,6 +39,8 @@ import io.github.minilauncher.util.Time
 import io.github.minilauncher.util.VerticalSwipe
 
 class HomeActivity : BaseActivity() {
+
+    override val followsPortraitLock = true
 
     private lateinit var repo: AppRepository
     private lateinit var prefs: Prefs
@@ -86,6 +91,20 @@ class HomeActivity : BaseActivity() {
             adapter = this@HomeActivity.adapter
         }
 
+        setUpButtons()
+        setUpGestures()
+
+        // Home screen: back does nothing. A callback, because Android 16 no
+        // longer calls onBackPressed for apps that target it.
+        onBackPressedDispatcher.addCallback(this) {}
+
+        if (!prefs.onboardingDone) {
+            startActivity(Intent(this, OnboardingActivity::class.java))
+        }
+    }
+
+    /** Every tappable text on the home screen. */
+    private fun setUpButtons() {
         findViewById<TextView>(R.id.allAppsButton).setOnClickListener { openDrawer() }
         findViewById<TextView>(R.id.settingsButton).setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
@@ -97,13 +116,26 @@ class HomeActivity : BaseActivity() {
             AlertDialog.Builder(this)
                 .setTitle(R.string.focus_session_cancel_title)
                 .setPositiveButton(android.R.string.ok) { _, _ ->
-                    prefs.focusSessionUntil = 0L
-                    updateFocusCountdown()
+                    StrictModeGate.loosen(this) {
+                        prefs.focusSessionUntil = 0L
+                        updateFocusCountdown()
+                    }
                 }
                 .setNegativeButton(android.R.string.cancel, null)
                 .show()
         }
 
+        announceAsButtons(
+            window.decorView,
+            R.id.temperature,
+            R.id.modeLabel,
+            R.id.focusSessionCountdown,
+            R.id.blockerWarning,
+            R.id.shortcutLeft,
+            R.id.allAppsButton,
+            R.id.settingsButton,
+            R.id.shortcutRight,
+        )
         setUpShortcut(R.id.shortcutLeft, isLeft = true)
         setUpShortcut(R.id.shortcutRight, isLeft = false)
 
@@ -118,7 +150,10 @@ class HomeActivity : BaseActivity() {
                 updateTemperature()
             }
         }
+    }
 
+    /** Swipe up opens the drawer, swipe down the notification shade. */
+    private fun setUpGestures() {
         gestureDetector = GestureDetector(
             this,
             object : GestureDetector.SimpleOnGestureListener() {
@@ -141,10 +176,6 @@ class HomeActivity : BaseActivity() {
                 }
             },
         )
-
-        if (!prefs.onboardingDone) {
-            startActivity(Intent(this, OnboardingActivity::class.java))
-        }
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
@@ -347,11 +378,6 @@ class HomeActivity : BaseActivity() {
                 findViewById<TextView>(R.id.shortcutRight).text = rightLabel
             }
         }
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        // Home screen: back does nothing.
     }
 
     private companion object {

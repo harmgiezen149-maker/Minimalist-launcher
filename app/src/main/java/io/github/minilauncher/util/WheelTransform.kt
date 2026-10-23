@@ -15,7 +15,12 @@ object WheelTransform {
     /** Rows this close to the centre stay untouched, so the focus band reads as normal size. */
     const val DEAD_ZONE = 0.15f
     const val MIN_SCALE = 0.72f
-    const val MIN_ALPHA = 0.45f
+
+    /**
+     * Dimmest a row gets at the edge. At 0.8 every theme and text color keeps
+     * at least 4.5:1 contrast there (WCAG AA); 0.45 dropped it to 2-4:1.
+     */
+    const val MIN_ALPHA = 0.8f
     const val MAX_ROTATION = 28f
 
     fun scaleFor(distanceRatio: Float): Float = 1f - falloff(distanceRatio) * (1f - MIN_SCALE)
