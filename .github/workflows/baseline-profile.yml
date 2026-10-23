@@ -2,7 +2,7 @@ name: Baseline profile
 
 # Run by hand, for example after a release with bigger changes: generates the
 # app's Baseline Profile on an emulator, measures cold start with and without
-# it (the numbers are in the log of the "Generate and measure" step), and
+# it (the numbers are in the run's summary), and
 # commits the new profile to the branch it runs on.
 on: workflow_dispatch
 
@@ -44,6 +44,12 @@ jobs:
           script: |
             ./gradlew --no-daemon :app:generateBaselineProfile
             ./gradlew --no-daemon :baselineprofile:connectedBenchmarkReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=Macrobenchmark -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR
+
+      - name: Startup times
+        if: always()
+        run: |
+          find baselineprofile/build/outputs -name '*benchmarkData.json' -print0 2>/dev/null |
+            xargs -0 scripts/benchmark-summary.py | tee -a "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

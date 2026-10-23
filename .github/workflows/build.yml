@@ -36,8 +36,13 @@ jobs:
 
       # The screenshot tests compare against app/src/test/screenshots; after a
       # deliberate visual change, run the "Record screenshots" workflow.
+      # The profile generator only runs by hand; compiling it here catches a
+      # dependency update that breaks it.
       - name: Lint, test with coverage and screenshots, build the release APK
-        run: ./gradlew --no-daemon -Proborazzi.test.verify=true lint createDebugUnitTestCoverageReport assembleRelease
+        run: >-
+          ./gradlew --no-daemon -Proborazzi.test.verify=true
+          lint createDebugUnitTestCoverageReport assembleRelease
+          :baselineprofile:compileBenchmarkReleaseKotlin
 
       - name: Lint findings
         if: always()
