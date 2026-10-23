@@ -13,12 +13,15 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.Robolectric
 
 @RunWith(AndroidJUnit4::class)
 class AppDrawerActivityTest {
+
+    @get:Rule
+    val screens = OpenScreens()
 
     private val context: Application = ApplicationProvider.getApplicationContext()
     private lateinit var prefs: Prefs
@@ -37,7 +40,7 @@ class AppDrawerActivityTest {
         drawer.findViewById<RecyclerView>(R.id.appList).adapter?.itemCount ?: 0
 
     private fun open(): AppDrawerActivity {
-        val drawer = Robolectric.buildActivity(AppDrawerActivity::class.java).setup().get()
+        val drawer = screens.start(AppDrawerActivity::class.java)
         waitUntil { rowCount(drawer) > 0 }
         return drawer
     }

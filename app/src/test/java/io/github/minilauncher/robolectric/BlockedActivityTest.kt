@@ -14,12 +14,15 @@ import io.github.minilauncher.ui.blocked.BlockedActivity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.Robolectric
 
 @RunWith(AndroidJUnit4::class)
 class BlockedActivityTest {
+
+    @get:Rule
+    val screens = OpenScreens()
 
     private val context: Application = ApplicationProvider.getApplicationContext()
     private lateinit var prefs: Prefs
@@ -32,7 +35,7 @@ class BlockedActivityTest {
 
     private fun show(reason: BlockReason, detail: String = ""): BlockedActivity {
         val intent = BlockedActivity.intent(context, BlockedInfo("com.app", reason, detail), "Some App")
-        return Robolectric.buildActivity(BlockedActivity::class.java, intent).setup().get()
+        return screens.start(BlockedActivity::class.java, intent)
     }
 
     private fun BlockedActivity.text(id: Int) = findViewById<TextView>(id).text.toString()

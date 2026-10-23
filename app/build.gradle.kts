@@ -1,3 +1,4 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
 
 plugins {
@@ -65,6 +66,11 @@ android {
 // Robolectric loads the app's classes through its own class loader; without
 // this JaCoCo would not count the code those tests cover.
 tasks.withType<Test>().configureEach {
+    // Full stack traces in the CI log; the HTML report is not reachable there.
+    testLogging {
+        events("failed")
+        exceptionFormat = TestExceptionFormat.FULL
+    }
     extensions.findByType(JacocoTaskExtension::class.java)?.apply {
         isIncludeNoLocationClasses = true
         excludes = listOf("jdk.internal.*")

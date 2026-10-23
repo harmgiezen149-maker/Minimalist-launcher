@@ -16,9 +16,9 @@ import io.github.minilauncher.data.model.BlockedInfo
 import io.github.minilauncher.ui.blocked.BlockedActivity
 import io.github.minilauncher.ui.drawer.AppDrawerActivity
 import io.github.minilauncher.ui.home.HomeActivity
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.Robolectric
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -32,6 +32,9 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(qualifiers = "w360dp-h720dp-xhdpi")
 class ThemeScreenshotTest {
+
+    @get:Rule
+    val screens = OpenScreens()
 
     private val context: Application = ApplicationProvider.getApplicationContext()
 
@@ -60,14 +63,14 @@ class ThemeScreenshotTest {
         App.applyNightMode(theme)
         val name = "${if (theme == Prefs.THEME_LIGHT) "light" else "black"}-${if (green) "green" else "plain"}"
 
-        val home = Robolectric.buildActivity(HomeActivity::class.java).setup().get()
+        val home = screens.start(HomeActivity::class.java)
         waitUntil { listSize(home, R.id.favoritesList) == 3 }
         // The clock and date change every minute; leave them out of the picture.
         home.findViewById<View>(R.id.clock).visibility = View.INVISIBLE
         home.findViewById<View>(R.id.date).visibility = View.INVISIBLE
         capture(home, "home-$name")
 
-        val drawer = Robolectric.buildActivity(AppDrawerActivity::class.java).setup().get()
+        val drawer = screens.start(AppDrawerActivity::class.java)
         waitUntil { listSize(drawer, R.id.appList) == 10 }
         capture(drawer, "drawer-$name")
 
@@ -76,7 +79,7 @@ class ThemeScreenshotTest {
             BlockedInfo("com.example.photos", BlockReason.SCHEDULE, "17:00"),
             "Photos",
         )
-        val blocked = Robolectric.buildActivity(BlockedActivity::class.java, blockIntent).setup().get()
+        val blocked = screens.start(BlockedActivity::class.java, blockIntent)
         blocked.findViewById<View>(R.id.blockedUsage).visibility = View.INVISIBLE
         capture(blocked, "blocked-$name")
     }
