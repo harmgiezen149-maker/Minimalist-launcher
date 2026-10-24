@@ -4,6 +4,21 @@ Alles uit de audit is gebouwd (zie de sectie "Opvolging" in [AUDIT.md](AUDIT.md)
 
 Waarom dit nodig is: de oude ondertekeningssleutel stond openbaar op GitHub. Iemand anders kon daarmee een "update" van je launcher maken. Daarom krijgt de app een nieuwe, geheime sleutel. Android accepteert een app met een andere sleutel alleen als nieuwe installatie, dus je installeert één keer opnieuw.
 
+### Als Play Protect de installatie blokkeert
+
+Bij het installeren (stap 1 en stap 4) kan "Google Play Protect – Schadelijke app geblokkeerd" verschijnen.
+
+1. Tik op **Meer informatie**. Staat daar **Toch installeren**, tik daarop. Klaar.
+2. Zie je alleen **OK**, zet dan het scannen heel even uit:
+   1. Open de **Play Store**, tik rechtsboven op je **profielfoto** › **Play Protect** › tandwiel rechtsboven.
+   2. Zet **Apps scannen met Play Protect** uit.
+   3. Tik in Mijn bestanden opnieuw op het APK-bestand en installeer.
+   4. Zet **Apps scannen met Play Protect** meteen weer aan.
+
+Waarom: de launcher vraagt dezelfde rechten als malware die meekijkt: toegankelijkheidsdienst, meldingstoegang, overlay en alle apps zien. Hij komt ook niet uit een winkel, dus Play Protect vertrouwt hem niet. Omzeilen is veilig voor de links in deze lijst, want die komen uit je eigen repository. Doe het nooit voor een APK van elders.
+
+Mogelijk trekt Play Protect later rechten van de launcher in. Blokkeert hij ineens niets meer, tik dan op het beginscherm op de melding "App blocking is configured but the blocker service is off" en geef de rechten opnieuw.
+
 ---
 
 ## 1. Instellingen veiligstellen (telefoon, 3 min)
@@ -11,6 +26,7 @@ Waarom dit nodig is: de oude ondertekeningssleutel stond openbaar op GitHub. Iem
 1. Open op je telefoon de vertrouwde oude link en installeer de update over de huidige app heen:
    <https://github.com/harmgiezen149-maker/PW2/releases/latest/download/minimalist-launcher-apk.zip>
    (zip openen → `minimalist-launcher.apk` installeren). Dit is de laatste versie met de oude sleutel. Hij heeft één nieuwe functie: back-up.
+   Blokkeert Play Protect? Zie [hierboven](#als-play-protect-de-installatie-blokkeert).
 2. Open de launcher → **Settings** → helemaal onderaan **Backup** → **Export settings to a file**.
 3. Bewaar het bestand `minimalist-launcher-settings.json`, bijvoorbeeld in Downloads of in Google Drive.
 
@@ -42,7 +58,7 @@ Zie je een rode run? Open hem; de melding zegt wat er mis is. Meestal is het een
    (blijft de download op 99% hangen, neem dan de zip: <https://github.com/harmgiezen149-maker/Minimalist-launcher/releases/latest/download/minimalist-launcher-apk.zip>)
 2. Zet tijdelijk **One UI Home** als standaard-startscherm: Instellingen › Apps › Standaardapps › Startscherm-app.
 3. **Verwijder** de oude Minimalist Launcher (Instellingen › Apps › Minimalist Launcher › Verwijderen).
-4. Installeer de nieuwe APK.
+4. Installeer de nieuwe APK. Blokkeert Play Protect? Zie [bovenaan](#als-play-protect-de-installatie-blokkeert).
 5. Open de launcher. De checklist met rechten verschijnt; geef ze opnieuw, inclusief **standaard-startscherm**, **gebruikstoegang**, **toegankelijkheidsdienst** en **meldingstoegang**.
 6. **Settings** › **Backup** › **Import settings from a file** → kies het bestand uit stap 1 → **OK**.
 7. Controleer onderaan in Settings het versienummer (bijvoorbeeld `1.12 (abc1234)`).
@@ -85,3 +101,7 @@ Dit kan alleen op een echt toestel:
   `Nieuwe versies: https://github.com/harmgiezen149-maker/Minimalist-launcher/releases/latest`
   Klik daarna **Update release**.
 - Verwijder het bestand `minimalist-launcher-settings.json` als je het niet meer nodig hebt.
+
+## Later (2027): ontwikkelaarsverificatie
+
+Google gaat eisen dat apps buiten de Play Store van een geverifieerde ontwikkelaar komen. Dat geldt sinds 30 september 2026 in Brazilië, Indonesië, Singapore en Thailand, en vanaf 2027 wereldwijd ([aankondiging](https://android-developers.googleblog.com/2026/03/android-developer-verification-rolling-out-to-all-developers.html)). Voor eigen gebruik komt er een gratis variant voor maximaal 20 toestellen, en installeren via een computer (adb) blijft mogelijk. Weigert je telefoon de launcher ooit met een melding over een niet-geverifieerde ontwikkelaar, vraag dan in een nieuwe sessie om hulp.
